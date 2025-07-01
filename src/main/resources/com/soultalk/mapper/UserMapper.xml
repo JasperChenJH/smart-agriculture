@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.soultalk.mapper.UserMapper">
+    <insert id="insert">
+        insert into soultalk.user(name, password)
+        values (#{name},#{password})
+    </insert>
+    <update id="update">
+        update soultalk.user
+        set name=#{name},
+            password=#{password},
+            introduce=#{introduce},
+            photo=#{photo}
+        where id=#{id}
+    </update>
+    <select id="selectByName" resultType="com.soultalk.po.UserPO">
+        select *
+        from soultalk.user
+        where name=#{name}
+    </select>
+</mapper>
