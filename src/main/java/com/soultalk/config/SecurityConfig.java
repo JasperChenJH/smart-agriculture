@@ -21,9 +21,10 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-    private final String[] JWT_EXCLUDE_PATH = new String[]{
+    //哪些路径完全绕过 Spring Security 认证体系
+    private final String[] EXCLUDE_URLS = new String[]{
             "/auth/login",
-            "/auth/register",
+            "/auth/register"
     };
 
     @Autowired
@@ -49,7 +50,7 @@ public class SecurityConfig {
                 // 4. 设置访问控制规则
                 .authorizeHttpRequests(auth -> auth
                         // 4.1 开放白名单路径
-                        .requestMatchers(JWT_EXCLUDE_PATH)
+                        .requestMatchers(EXCLUDE_URLS)
                         .permitAll()
                         // 4.2 保护其他所有路径
                         .anyRequest().authenticated()

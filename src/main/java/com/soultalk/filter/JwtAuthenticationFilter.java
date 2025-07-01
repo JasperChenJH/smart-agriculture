@@ -25,8 +25,8 @@ import java.util.List;
 @Component
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    // 不需要认证的路径（与 SecurityConfig 中的白名单对应）
-    private static final List<String> EXCLUDED_URLS = Arrays.asList(
+    // 路径跳过 JWT 验证
+    private static final List<String> JWT_EXCLUDED = Arrays.asList(
             "/auth/login",
             "/auth/register"
     );
@@ -52,7 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // 白名单路径直接放行
-        if (EXCLUDED_URLS.contains(requestURI)) {
+        if (JWT_EXCLUDED.contains(requestURI)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -83,9 +83,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (JWTVerificationException e) {
             log.info("JWT 验证失败");
+            log.error(e.getMessage());
         }
 
         // 认证失败处理401
+        response.setCharacterEncoding("utf-8");//中文
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.getWriter().write("未知或过期JWT令牌");
     }
@@ -93,9 +95,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // 从 Authorization 头提取令牌
     private String getTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
+        if (bearerToken != null)return bearerToken;
+        else return null;
     }
 }

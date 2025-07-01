@@ -18,4 +18,9 @@
         from soultalk.user
         where name=#{name}
     </select>
+    <select id="countByName" resultType="java.lang.Integer">
+        select count(*)
+        from soultalk.user
+        where name=#{name}
+    </select>
 </mapper>

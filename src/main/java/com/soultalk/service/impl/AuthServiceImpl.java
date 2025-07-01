@@ -37,7 +37,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseEntity<?> register(String name, String password) {
         // 检查用户名重复
-        if (userMapper.selectByName(name) != null) {
+        if (userMapper.countByName(name) > 0) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("用户名已存在");
         }
 
@@ -49,7 +49,8 @@ public class AuthServiceImpl implements AuthService {
 
         // 加密密码并保存
         UserPO user = new UserPO();
-        user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+        user.setName(name);
+        user.setPassword(bCryptPasswordEncoder.encode(password));
         userMapper.insert(user);
 
         return ResponseEntity.ok("注册成功");
