@@ -10,8 +10,5 @@ public interface AuthService {
 
     ResponseEntity<?> register(String name, String password);
 
-    //传入密码明文，检查
-    boolean check(String name, String password);
-
     R update(UserPO user, MultipartFile photo);
 }

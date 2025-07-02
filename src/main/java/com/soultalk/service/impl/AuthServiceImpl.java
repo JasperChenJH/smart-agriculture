@@ -31,6 +31,7 @@ public class AuthServiceImpl implements AuthService {
         UserPO user = userMapper.selectByNameAndPassword(name, password);
         if (user!=null) {
             String token = JwtUtils.generateToken(name);
+            //存储当前用户id
             BaseContext.setCurrentId(user.getId());
             return ResponseEntity.ok(new JwtResponse(token));
         }
@@ -59,11 +60,6 @@ public class AuthServiceImpl implements AuthService {
         return ResponseEntity.ok("注册成功");
     }
 
-    @Override
-    public boolean check(String name, String password) {
-        UserPO user = userMapper.selectByNameAndPassword(name, password);
-        return user != null;
-    }
 
     @Override
     public R update(UserPO user, MultipartFile photo) {
