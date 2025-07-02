@@ -12,8 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-
 @Slf4j
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -49,7 +47,7 @@ public class AuthServiceImpl implements AuthService {
         UserPO user = new UserPO();
         user.setName(name);
         user.setPassword(bCryptPasswordEncoder.encode(password));
-        user.setTime(Instant.now().getEpochSecond());
+        user.setTime(System.currentTimeMillis());
         userMapper.insert(user);
 
         return ResponseEntity.ok("注册成功");
@@ -88,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
         //如果新密码为空，则重置为a12345
         if (newPassword.isEmpty()) newPassword = "a12345";
         //重设时间
-        user.setTime(Instant.now().getEpochSecond());
+        user.setTime(System.currentTimeMillis());
         user.setPassword(bCryptPasswordEncoder.encode(newPassword));
 
         userMapper.update(user);
