@@ -77,6 +77,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         response.setCharacterEncoding("utf-8");//中文
                         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                         response.getWriter().write("过期的JWT令牌");
+                        return;
                     }
 
                     // 解析JWT 设置用户 ID
