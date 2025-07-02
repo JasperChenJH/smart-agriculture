@@ -24,7 +24,7 @@ public class SecurityConfig {
     //哪些路径完全绕过 Spring Security 认证体系
     private final String[] EXCLUDE_URLS = new String[]{
             "/auth/login",
-            "/auth/register"
+            "/auth/register",
     };
 
     @Autowired

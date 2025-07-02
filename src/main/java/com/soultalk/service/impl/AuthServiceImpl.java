@@ -1,5 +1,6 @@
 package com.soultalk.service.impl;
 
+import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.JwtResponse;
 import com.soultalk.controller.request.R;
 import com.soultalk.mapper.UserMapper;
@@ -27,8 +28,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public ResponseEntity<?> login(String name, String password) {
-        if (this.check(name, password)) {
+        UserPO user = userMapper.selectByNameAndPassword(name, password);
+        if (user!=null) {
             String token = JwtUtils.generateToken(name);
+            BaseContext.setCurrentId(user.getId());
             return ResponseEntity.ok(new JwtResponse(token));
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("用户名或者密码错误");
@@ -58,16 +61,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean check(String name, String password) {
-        try {
-            UserPO dbUser = userMapper.selectByName(name);
-            if (dbUser != null && bCryptPasswordEncoder.matches(password, dbUser.getPassword())) {
-                return true;
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return false;
-        }
-        return false;
+        UserPO user = userMapper.selectByNameAndPassword(name, password);
+        return user != null;
     }
 
     @Override

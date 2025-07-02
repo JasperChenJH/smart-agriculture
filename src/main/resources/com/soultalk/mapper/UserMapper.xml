@@ -23,4 +23,10 @@
         from soultalk.user
         where name=#{name}
     </select>
+    <select id="selectByNameAndPassword" resultType="com.soultalk.po.UserPO">
+        select *
+        from soultalk.user
+        where name=#{name}
+        and password=#{password}
+    </select>
 </mapper>

@@ -9,21 +9,22 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-@Component
 @Slf4j
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // 路径跳过 JWT 验证
     private static final List<String> JWT_EXCLUDED = Arrays.asList(
@@ -95,7 +96,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // 从 Authorization 头提取令牌
     private String getTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null)return bearerToken;
-        else return null;
+        if (bearerToken != null) {
+            return bearerToken;
+        } else {
+            return null;
+        }
     }
 }
