@@ -91,8 +91,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // 设置安全上下文
                     SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                    // 添加用户名到请求属性
-//                    request.setAttribute("userid", userId);
+                    // 添加用户id到请求属性
+                    request.setAttribute("userid", userId);
 
                     // 放行请求
                     filterChain.doFilter(request, response);
