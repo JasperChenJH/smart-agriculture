@@ -60,14 +60,36 @@ public class AuthServiceImpl implements AuthService {
     public boolean check(String name, String password) {
         try {
             UserPO user = userMapper.selectByName(name);
-            if (user != null && !bCryptPasswordEncoder.matches(password, user.getPassword())) {
+            if (user != null && bCryptPasswordEncoder.matches(password, user.getPassword())) {
                 return true;
             }
         } catch (Exception e) {
             log.error(e.getMessage());
         }
         return false;
+    }
 
+    @Override
+    public boolean check(Long userId, String password) {
+        try {
+            UserPO user = userMapper.selectById(userId);
+            if (user != null && bCryptPasswordEncoder.matches(password, user.getPassword())) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        return false;
+    }
+
+    @Override
+    public void resetPassword(Long userId, String newPassword) {
+        UserPO user = userMapper.selectById(userId);
+
+        //如果新密码为空，则重置为a12345
+        if (newPassword.isEmpty()) newPassword = "a12345";
+        user.setPassword(bCryptPasswordEncoder.encode(newPassword));
+        userMapper.update(user);
     }
 }
 
