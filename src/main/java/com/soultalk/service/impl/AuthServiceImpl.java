@@ -28,9 +28,7 @@ public class AuthServiceImpl implements AuthService {
     public ResponseEntity<?> login(String name, String password) {
         UserPO user = userMapper.selectByName(name);
         if (user != null) {
-            String token = JwtUtils.generateToken(name);
-            //存储当前用户id
-            BaseContext.setCurrentId(user.getId());
+            String token = JwtUtils.generateToken(user.getId());
             return ResponseEntity.ok(new JwtResponse(token));
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("用户名或者密码错误");

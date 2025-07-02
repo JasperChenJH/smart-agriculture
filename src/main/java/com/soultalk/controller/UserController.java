@@ -1,11 +1,13 @@
 package com.soultalk.controller;
 
+import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.AuthService;
 import com.soultalk.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,6 +23,12 @@ public class UserController {
     private AuthService authService;
     @Autowired
     private UserMapper userMapper;
+
+    @PostMapping("/hello")
+    public ResponseEntity<?> hello() {
+        System.out.println(BaseContext.getCurrentId());
+        return ResponseEntity.ok("hello");
+    }
 
     @GetMapping("/info")
     public R info(@RequestParam("name") String name, @RequestParam("password") String password) {

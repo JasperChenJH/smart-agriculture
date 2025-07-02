@@ -1,5 +1,6 @@
 package com.soultalk.controller;
 
+import com.soultalk.controller.request.R;
 import com.soultalk.mapper.UserMapper;
 import com.soultalk.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +30,4 @@ public class AuthController {
         return authService.register(name, password);
     }
 
-    @PostMapping("/hello")
-    public ResponseEntity<?> hello() {
-        return ResponseEntity.ok("hello");
-    }
 }
