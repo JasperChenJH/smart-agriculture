@@ -28,7 +28,7 @@ public class JwtUtils {
 
     // 获取用户ID
     public static Long getUserIdFromToken(String token) {
-        String s=verifyToken(token).getSubject();
+        String s = verifyToken(token).getSubject();
         return Long.parseLong(s);
     }
 

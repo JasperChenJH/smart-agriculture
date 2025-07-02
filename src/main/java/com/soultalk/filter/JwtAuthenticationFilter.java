@@ -4,12 +4,13 @@ package com.soultalk.filter;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.soultalk.context.BaseContext;
+import com.soultalk.mapper.UserMapper;
 import com.soultalk.utils.JwtUtils;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,7 +19,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,14 +29,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // 路径跳过 JWT 验证
     private static final List<String> JWT_EXCLUDED = Arrays.asList(
             "/auth/login",
-            "/auth/register"
+            "/auth/register",
+            "/auth/resetPassword"
     );
+    @Autowired
+    private UserMapper userMapper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+                                    FilterChain filterChain) {
 
         try {
             // 处理预检请求 OPTIONS
@@ -67,6 +69,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // 验证并解析 JWT
                     DecodedJWT decodedJWT = JwtUtils.verifyToken(token);
                     Long userId = Long.parseLong(decodedJWT.getSubject());
+                    Long jwtTimeStamp = decodedJWT.getIssuedAt().getTime();
+                    Long pwdTimeStamp = userMapper.getTimeById(userId);
+
+                    //校验jwt生成时间和密码设定时间
+                    if (pwdTimeStamp > jwtTimeStamp) {
+                        response.setCharacterEncoding("utf-8");//中文
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.getWriter().write("过期的JWT令牌");
+                    }
 
                     // 解析JWT 设置用户 ID
                     BaseContext.setCurrentId(userId);
@@ -87,7 +98,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
             } catch (JWTVerificationException e) {
-                log.info("JWT 验证失败");
                 log.error(e.getMessage());
             }
 
@@ -104,7 +114,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // 从 Authorization 头提取令牌
     private String getTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        return bearerToken;
+        return request.getHeader("Authorization");
     }
 }

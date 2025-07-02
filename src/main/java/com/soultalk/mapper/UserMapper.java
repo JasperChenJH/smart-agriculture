@@ -7,6 +7,10 @@ import org.apache.ibatis.annotations.Mapper;
 public interface UserMapper {
     UserPO selectByName(String name);
 
+    UserPO selectById(Long id);
+
+    Long getTimeById(Long id);
+
     Integer countByName(String name);
 
     void insert(UserPO user);

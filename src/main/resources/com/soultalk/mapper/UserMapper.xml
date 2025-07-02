@@ -2,25 +2,36 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.soultalk.mapper.UserMapper">
     <insert id="insert">
-        insert into soultalk.user(name, password)
-        values (#{name},#{password})
+        insert into soultalk.user(name, password,time)
+        values (#{name}, #{password},#{time})
     </insert>
     <update id="update">
         update soultalk.user
         set name=#{name},
             password=#{password},
+            time=#{time},
             introduce=#{introduce},
             photo=#{photo}
-        where id=#{id}
+        where id = #{id}
     </update>
     <select id="selectByName" resultType="com.soultalk.po.UserPO">
         select *
         from soultalk.user
-        where name=#{name}
+        where name = #{name}
     </select>
     <select id="countByName" resultType="java.lang.Integer">
         select count(*)
         from soultalk.user
-        where name=#{name}
+        where name = #{name}
+    </select>
+    <select id="selectById" resultType="com.soultalk.po.UserPO">
+        select *
+        from soultalk.user
+        where id = #{id}
+    </select>
+    <select id="getTimeById" resultType="java.lang.Long">
+        select time
+        from soultalk.user
+        where id = #{id}
     </select>
 </mapper>

@@ -12,6 +12,7 @@ public class UserPO {
     private Long id;
     private String name;
     private String password;
+    private Long time;
     private String introduce;
     private String photo;
 }

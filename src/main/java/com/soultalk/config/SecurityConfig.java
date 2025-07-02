@@ -25,6 +25,7 @@ public class SecurityConfig {
     private final String[] EXCLUDE_URLS = new String[]{
             "/auth/login",
             "/auth/register",
+            "/auth/resetPassword"
     };
 
     @Autowired
