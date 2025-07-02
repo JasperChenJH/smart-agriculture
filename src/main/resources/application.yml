@@ -4,14 +4,9 @@ spring:
   application:
     name: soultalk
   datasource:
-#    url: jdbc:mysql://47.109.181.181:3306/soultalk?useSSL=false&serverTimezone=UTC
-#    username: soultalk
-#    password: a12345
-
-#    本机测试
-    username:  root
-    password:  258013CH
-    url: jdbc:mysql://localhost:3306/soultalk?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://47.109.181.181:3306/soultalk?useSSL=false&serverTimezone=UTC
+    username: soultalk
+    password: a12345
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       maximum-pool-size: 10  # 可根据需求调整

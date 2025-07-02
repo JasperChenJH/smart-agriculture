@@ -12,6 +12,4 @@ public interface UserMapper {
     void insert(UserPO user);
 
     void update(UserPO user);
-
-    UserPO selectByNameAndPassword(String name, String password);
 }

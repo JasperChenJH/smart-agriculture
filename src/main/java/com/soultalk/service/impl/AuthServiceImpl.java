@@ -2,7 +2,6 @@ package com.soultalk.service.impl;
 
 import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.JwtResponse;
-import com.soultalk.controller.request.R;
 import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.AuthService;
@@ -14,7 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -28,8 +26,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public ResponseEntity<?> login(String name, String password) {
-        UserPO user = userMapper.selectByNameAndPassword(name, password);
-        if (user!=null) {
+        UserPO user = userMapper.selectByName(name);
+        if (user != null) {
             String token = JwtUtils.generateToken(name);
             //存储当前用户id
             BaseContext.setCurrentId(user.getId());
@@ -60,17 +58,18 @@ public class AuthServiceImpl implements AuthService {
         return ResponseEntity.ok("注册成功");
     }
 
-
     @Override
-    public R update(UserPO user, MultipartFile photo) {
-        String url = baseService.saveFileToOSS(photo.getOriginalFilename(), photo);
-
-        if (url != null) {
-            user.setPhoto(url);
+    public boolean check(String name, String password) {
+        try {
+            UserPO user = userMapper.selectByName(name);
+            if (user != null && !bCryptPasswordEncoder.matches(password, user.getPassword())) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
+        return false;
 
-        userMapper.update(user);
-        return R.Success(user.getName() + " 修改成功");
     }
 }
 

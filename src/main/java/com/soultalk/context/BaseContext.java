@@ -5,13 +5,16 @@ package com.soultalk.context;
  * ThreadLocal：线程局部变量，每个线程都拥有自己的变量副本，线程之间互不干扰
  */
 public class BaseContext {
-    private static ThreadLocal<String> threadLocal = new ThreadLocal<>();
-    public static void setCurrentId(Long id) {
-        threadLocal.set(String.valueOf(id));
-    }
+    private static final ThreadLocal<String> threadLocal = new ThreadLocal<>();
+
     public static String getCurrentId() {
         return threadLocal.get();
     }
+
+    public static void setCurrentId(Long id) {
+        threadLocal.set(String.valueOf(id));
+    }
+
     public static void remove() {
         threadLocal.remove();
     }
