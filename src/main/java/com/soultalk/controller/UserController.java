@@ -32,7 +32,8 @@ public class UserController {
 
     @GetMapping("/info")
     public R info() {
-        return userService.info();
+        Long id = Long.valueOf(BaseContext.getCurrentId());
+        return R.Success(userService.info(id));
     }
 
     @PostMapping("/update")
@@ -43,7 +44,7 @@ public class UserController {
 
         if (authService.check(password, password)) {
             UserPO user = userMapper.selectByName(name);
-            return userService.update(user, introduce, photo);
+            return R.Success(userService.update(user, introduce, photo));
         } else {
             return R.Success("密码错误");
         }

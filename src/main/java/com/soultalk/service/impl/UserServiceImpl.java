@@ -20,15 +20,14 @@ public class UserServiceImpl implements UserService {
     private UserMapper userMapper;
 
     @Override
-    public R info() {
-        Long  id = Long.valueOf(BaseContext.getCurrentId());
+    public UserPO info(Long id) {
         UserPO user = userMapper.selectById(id);
         user.setPassword(null);
-        return R.Success(user);
+        return user;
     }
 
     @Override
-    public R update(UserPO user, String introduce, MultipartFile photo) {
+    public String update(UserPO user, String introduce, MultipartFile photo) {
         if (!introduce.isEmpty()) {
             user.setIntroduce(introduce);
         }
@@ -41,6 +40,6 @@ public class UserServiceImpl implements UserService {
         }
 
         userMapper.update(user);
-        return R.Success(user.getName() + " 修改成功");
+        return user.getName() + " 修改成功";
     }
 }
