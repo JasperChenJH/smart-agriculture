@@ -6,4 +6,6 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface AgentMapper {
     void insert(AgentPO agent);
+
+    Integer countById(Long id);
 }

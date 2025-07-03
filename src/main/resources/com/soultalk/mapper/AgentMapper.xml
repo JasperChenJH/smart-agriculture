@@ -5,4 +5,9 @@
         insert into soultalk.agent(name, creator, create_time, prompt, introduction, photo, api, is_public)
         values (#{name},#{creator},#{createTime},#{prompt},#{introduction},#{photo},#{api},#{isPublic})
     </insert>
+    <select id="countById" resultType="java.lang.Integer">
+        select count(*)
+        from soultalk.agent
+        where id=#{id}
+    </select>
 </mapper>
