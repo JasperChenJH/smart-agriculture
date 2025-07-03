@@ -84,7 +84,9 @@ public class AuthServiceImpl implements AuthService {
         UserPO user = userMapper.selectById(userId);
 
         //如果新密码为空，则重置为a12345
-        if (newPassword.isEmpty()) newPassword = "a12345";
+        if (newPassword.isEmpty()) {
+            newPassword = "a12345";
+        }
         //重设时间
         user.setTime(System.currentTimeMillis());
         user.setPassword(bCryptPasswordEncoder.encode(newPassword));

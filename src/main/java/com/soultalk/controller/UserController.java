@@ -31,8 +31,8 @@ public class UserController {
     }
 
     @GetMapping("/info")
-    public R info(@RequestParam("name") String name, @RequestParam("password") String password) {
-        return userService.info(name);
+    public R info() {
+        return userService.info();
     }
 
     @PostMapping("/update")

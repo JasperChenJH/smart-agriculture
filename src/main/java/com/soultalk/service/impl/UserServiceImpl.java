@@ -1,5 +1,6 @@
 package com.soultalk.service.impl;
 
+import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.UserPO;
@@ -19,8 +20,9 @@ public class UserServiceImpl implements UserService {
     private UserMapper userMapper;
 
     @Override
-    public R info(String name) {
-        UserPO user = userMapper.selectByName(name);
+    public R info() {
+        Long  id = Long.valueOf(BaseContext.getCurrentId());
+        UserPO user = userMapper.selectById(id);
         user.setPassword(null);
         return R.Success(user);
     }
