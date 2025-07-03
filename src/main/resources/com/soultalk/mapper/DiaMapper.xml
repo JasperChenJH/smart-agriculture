@@ -5,4 +5,21 @@
         insert into soultalk.dia(user_id, is_agent, agent_id, content, update_time)
         values (#{userId},#{isAgent},#{agentId},#{content},#{updateTime})
     </insert>
+    <select id="selectRangeDia" resultType="com.soultalk.po.DiaPO">
+        select *
+        from soultalk.dia
+        where user_id=#{id}
+        order by update_time desc
+        limit #{start} , #{length}
+    </select>
+    <select id="countByUserId" resultType="java.lang.Long">
+        select count(*)
+        from soultalk.dia
+        where user_id=#{id}
+    </select>
+    <select id="selectDiaById" resultType="com.soultalk.po.DiaPO">
+        select *
+        from soultalk.dia
+        where id=#{id}
+    </select>
 </mapper>

@@ -1,6 +1,5 @@
 package com.soultalk.service;
 
-import com.soultalk.controller.request.R;
 import com.soultalk.po.UserPO;
 import org.springframework.web.multipart.MultipartFile;
 

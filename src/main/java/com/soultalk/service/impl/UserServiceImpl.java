@@ -1,7 +1,5 @@
 package com.soultalk.service.impl;
 
-import com.soultalk.context.BaseContext;
-import com.soultalk.controller.request.R;
 import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.BaseService;
