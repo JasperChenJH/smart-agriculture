@@ -22,4 +22,4 @@ mybatis:
 #日志
 logging:
     level:
-      root: debug
+      root: info

@@ -5,6 +5,11 @@
         insert into soultalk.dia(user_id, is_agent, agent_id, content, update_time)
         values (#{userId},#{isAgent},#{agentId},#{content},#{updateTime})
     </insert>
+    <update id="updateContent">
+        update soultalk.dia
+        set content=#{content}
+        where id=#{id}
+    </update>
     <select id="selectRangeDia" resultType="com.soultalk.po.DiaPO">
         select *
         from soultalk.dia

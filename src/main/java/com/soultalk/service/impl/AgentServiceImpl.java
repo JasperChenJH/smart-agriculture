@@ -1,14 +1,12 @@
 package com.soultalk.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.mapper.AgentMapper;
 import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.AgentPO;
 import com.soultalk.service.AgentService;
 import com.soultalk.service.BaseService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,12 +24,10 @@ public class AgentServiceImpl implements AgentService {
 
 
     @Override
-    public R createAgent(HttpServletRequest request, String jsonData, MultipartFile photo) {
+    public R createAgent(Long userId, String jsonData, MultipartFile photo) {
         //补充agent信息
-        long userId;
         AgentPO agent;
         try {
-            userId = Long.parseLong(BaseContext.getCurrentId());//获取用户ID
             agent = JSONObject.parseObject(jsonData, AgentPO.class);
         } catch (Exception e) {
             return R.Failed("数据格式有错误！");
@@ -50,11 +46,16 @@ public class AgentServiceImpl implements AgentService {
 
         //是否公开
         try {
-            if (agent.getIsPublic() == null) {
-                agent.setIsPublic(0);
+            if (agent.getPub() == null) {
+                agent.setPub(0);
             }
         } catch (NullPointerException e) {
-            agent.setIsPublic(0);
+            agent.setPub(0);
+        }
+
+        //api和模型必有一个
+        if (agent.getModel() == null && agent.getApi() == null) {
+            return R.Failed("数据结构错误");
         }
 
         //保存智能体

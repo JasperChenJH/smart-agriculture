@@ -1,6 +1,7 @@
 package com.soultalk.service;
 
 import com.soultalk.po.DiaPO;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -16,4 +17,7 @@ public interface DiaService {
 
     //查找用户一定范围的对话详细
     List<DiaPO> getRangeDia(Long userId, Long start, Long end);
+
+    //流式请求
+    SseEmitter streamQuestion(Long diaId, String question);
 }

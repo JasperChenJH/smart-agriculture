@@ -12,6 +12,7 @@ public class DiaPO {
     private Long userId;
     private Integer isAgent;
     private Long agentId;
+    private String model;
     private String content;
     private Long updateTime;
 }

@@ -12,9 +12,10 @@ public class AgentPO {
     private String name;
     private Long creator;
     private Long createTime;
+    private Integer pub;
     private String prompt;
     private String introduction;
     private String photo;
+    private String model;
     private String api;
-    private Integer isPublic;
 }

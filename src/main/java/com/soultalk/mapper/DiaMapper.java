@@ -15,4 +15,6 @@ public interface DiaMapper {
     List<DiaPO> selectRangeDia(Long id, Long start, Long length);
 
     Long countByUserId(Long id);
+
+    void updateContent(Long id, String content);
 }

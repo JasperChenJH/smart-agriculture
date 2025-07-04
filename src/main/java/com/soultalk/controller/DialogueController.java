@@ -7,6 +7,7 @@ import com.soultalk.service.DiaService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -58,10 +59,10 @@ public class DialogueController {
     }
 
     //流式输出
-//    @PostMapping("/question")
-//    public SseEmitter question(@RequestBody DiaInfoDTO diaInfoDTO) {
-//        return diaService.question(diaInfoDTO);
-//    }
+    @PostMapping("/streamQuestion")
+    public SseEmitter streamQuestion(@RequestParam("id") Long diaId, @RequestParam("question") String question) {
+        return diaService.streamQuestion(diaId, question);
+    }
 
     //查找对话详细信息
 //    @GetMapping("/select/info")

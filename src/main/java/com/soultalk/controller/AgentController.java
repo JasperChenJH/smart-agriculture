@@ -1,13 +1,15 @@
 package com.soultalk.controller;
 
+import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.mapper.UserMapper;
 import com.soultalk.service.AgentService;
-import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @CrossOrigin
 @RestController
 @RequestMapping("/agent")
@@ -19,8 +21,14 @@ public class AgentController {
 
     //创建智能体
     @PostMapping("/create")
-    public R create(HttpServletRequest request, @RequestParam("jsonData") String jsonData, @RequestParam("photo") MultipartFile photo) {
-        return agentService.createAgent(request, jsonData, photo);
+    public R create(@RequestParam("jsonData") String jsonData, @RequestParam("photo") MultipartFile photo) {
+        try {
+            Long userId = Long.parseLong(BaseContext.getCurrentId());
+            return agentService.createAgent(userId, jsonData, photo);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return R.Failed(e.getMessage());
+        }
     }
 
     //查询所有智能体
