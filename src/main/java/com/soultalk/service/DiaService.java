@@ -4,6 +4,7 @@ import com.soultalk.po.DiaPO;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
+import java.util.Map;
 
 public interface DiaService {
     //创建对应智能体的对话，空agentId则为纯对话,返回id
@@ -20,6 +21,9 @@ public interface DiaService {
 
     //流式请求
     SseEmitter streamQuestion(Long diaId, String question);
+
+    //非流式请求模型
+    Map<String,String> question(Long diaId, String question);
 
     //清空上下文
     void removeContent(Long userId, Long diaId) throws Exception;

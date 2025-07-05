@@ -22,6 +22,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -192,6 +193,69 @@ public class DiaServiceImpl implements DiaService {
             log.error(e.getMessage());
         }
         return emitter;
+    }
+
+    @Override
+    public Map<String, String> question(Long diaId, String question) {
+        //获取对话和模型情况
+        AgentPO agent = null;
+        DiaPO diaPO = diaMapper.selectDiaById(diaId);
+        assert diaPO != null;
+        if (diaPO.getIsAgent() == 1) {
+            agent = agentMapper.selectById(diaPO.getAgentId());
+        }
+
+        //确认模型
+        String modelName = null;
+        if (diaPO.getModel() == null) {
+            if (diaPO.getIsAgent() == 1) {
+                modelName = agentMapper.selectById(diaPO.getAgentId()).getModel();
+            }
+        } else {
+            modelName = diaPO.getModel();
+        }
+        assert modelName != null && !modelName.isEmpty();
+
+        //获取系统提示词
+        String systemPrompt = null;
+        if (agent != null) {
+            systemPrompt = agent.getPrompt();
+        }
+
+        //获取上下文
+        String str = diaPO.getContent();
+        List<JSONObject> messageList;
+        if (str == null || str.isEmpty()) {
+            messageList = new ArrayList<>();
+        } else {
+            messageList = JSON.parseArray(str, JSONObject.class);
+        }
+
+        //生成
+        Map<String, String> result = null;
+        try {
+            result = tongYiSource.call(modelName, systemPrompt, messageList, question);
+
+            //打包提问JSON
+            JSONObject ques = new JSONObject();
+            ques.put(Role.USER.getValue(), question);
+            //打包回答JSON
+            JSONObject ans = new JSONObject();
+            ans.put("thk", result.get("think"));
+            ans.put("ans", result.get("answer"));
+            JSONObject answer = new JSONObject();
+            answer.put(Role.SYSTEM.getValue(), ans);
+            //保存数据库
+            messageList.add(ques);
+            messageList.add(answer);
+            diaPO.setContent(messageList.toString());
+            diaMapper.updateContent(diaPO.getId(), diaPO.getContent());
+
+        } catch (NoApiKeyException | InputRequiredException e) {
+            log.error(e.getMessage());
+        }
+
+        return result;
     }
 
     @Override
