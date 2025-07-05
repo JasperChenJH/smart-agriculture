@@ -16,58 +16,58 @@ import com.soultalk.po.DiaPO;
 import io.reactivex.Flowable;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
 public class TongYiSource implements AIGCSource {
-    @Autowired
-    private DiaMapper diaMapper;
-    @Autowired
-    private AgentMapper agentMapper;
 
     @Override
-    public String call(Long diaId, String question) {
+    public String call(String modelName, String systemPrompt, JSONObject content, String question) {
         return "";
     }
 
     @Override
-    public Flowable<GenerationResult> streamCall(Long diaId, String question) throws NoApiKeyException, ApiException, InputRequiredException {
-        //获取对话和智能体
-        DiaPO diaPO = diaMapper.selectDiaById(diaId);
-        assert diaPO != null;
-
-        //获取历史对话
+    public Flowable<GenerationResult> streamCall(String modelName, String systemPrompt, JSONObject content, String question) throws NoApiKeyException, ApiException, InputRequiredException {
         List<Message> messageList = new ArrayList<>();
-        JSONObject preMessage = new JSONObject();
-        if (diaPO.getContent() != null && !diaPO.getContent().isEmpty()) {
-            preMessage = JSONObject.parseObject(diaPO.getContent(), JSONObject.class);
+
+        //写入系统提示词
+        if (systemPrompt != null && !systemPrompt.isEmpty()) {
+            messageList.add(Message.builder()
+                    .role(Role.SYSTEM.getValue())
+                    .content(systemPrompt)
+                    .build()
+            );
         }
 
-        preMessage.put(Role.USER.getValue(), question);
-        for (String key : preMessage.keySet()) {
+        //整理历史对话
+        content.put(Role.USER.getValue(), question);
+        for (Map.Entry<String, Object> map : content.entrySet()) {
+            String mes = null;
+            if (map.getKey().equals(Role.USER.getValue())) {
+                mes = (String) map.getValue();
+            } else {
+                mes =JSONObject.parseObject((String)map.getValue()).getString("ans");
+            }
+
+            if (mes == null || mes.isEmpty()) continue;
             Message m = Message.builder()
-                    .role(key)
-                    .content(preMessage.getString(key))
+                    .role(map.getKey())
+                    .content(mes)
                     .build();
             messageList.add(m);
         }
-
-        //写入本次问题
-        messageList.add(Message.builder()
-                .role(Role.USER.getValue())
-                .content(question)
-                .build()
-        );
 
         //调用API
         Generation gen = new Generation();
         GenerationParam param = GenerationParam.builder()
                 .apiKey(Configs.DASHSCOPE_API_KEY)
-                .model(diaPO.getModel())
+                .model(modelName)
                 .messages(messageList)
                 .resultFormat(GenerationParam.ResultFormat.MESSAGE)
                 // Qwen3模型通过enable_thinking参数控制思考过程（开源版默认True，商业版默认False）

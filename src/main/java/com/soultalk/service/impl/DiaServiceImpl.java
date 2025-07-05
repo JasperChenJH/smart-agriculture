@@ -7,10 +7,12 @@ import com.alibaba.fastjson.JSONObject;
 import com.soultalk.aigc.AIGCSource;
 import com.soultalk.mapper.AgentMapper;
 import com.soultalk.mapper.DiaMapper;
+import com.soultalk.po.AgentPO;
 import com.soultalk.po.DiaPO;
 import com.soultalk.service.DiaService;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,8 +29,8 @@ public class DiaServiceImpl implements DiaService {
     private DiaMapper diaMapper;
     @Autowired
     private AgentMapper agentMapper;
-    @Autowired
-    private AIGCSource aigcSource;
+    @Resource
+    private AIGCSource tongYiSource;
 
     @Override
     public long createDia(Long userId, Long agentId) {
@@ -78,14 +80,39 @@ public class DiaServiceImpl implements DiaService {
 
     @Override
     public SseEmitter streamQuestion(Long diaId, String question) {
+        //获取对话和模型情况
+        AgentPO agent = null;
+        DiaPO diaPO = diaMapper.selectDiaById(diaId);
+        assert diaPO != null;
+        if (diaPO.getIsAgent() == 1) {
+            agent = agentMapper.selectById(diaPO.getAgentId());
+        }
+
         // 1. 创建SseEmitter（超时设为3分钟）
         SseEmitter emitter = new SseEmitter(180_000L);
 
         // 2. 订阅Flowable
-        StringBuilder sb = new StringBuilder();
+        StringBuilder ansSb = new StringBuilder();
+        StringBuilder thkSb = new StringBuilder();
 
-        DiaPO diaPO = diaMapper.selectDiaById(diaId);
-        assert diaPO != null;
+        //确认模型
+        String modelName = null;
+        if (diaPO.getModel() == null) {
+            if (diaPO.getIsAgent() == 1) {
+                modelName = agentMapper.selectById(diaPO.getAgentId()).getModel();
+            }
+        } else {
+            modelName = diaPO.getModel();
+        }
+        assert modelName != null && !modelName.isEmpty();
+
+        //获取系统提示词
+        String systemPrompt = null;
+        if(agent!=null) {
+            systemPrompt=agent.getPrompt();
+        }
+
+        //获取上下文
         JSONObject preMessage;
         if (diaPO.getContent() != null && !diaPO.getContent().isEmpty()) {
             preMessage = JSONObject.parseObject(diaPO.getContent(), JSONObject.class);
@@ -93,16 +120,29 @@ public class DiaServiceImpl implements DiaService {
             preMessage = new JSONObject();
         }
 
+        //异步生成发送
         try {
-            Disposable disposable = aigcSource.streamCall(diaId, question)
+            Disposable disposable = tongYiSource.streamCall(modelName,systemPrompt , preMessage, question)
                     .subscribeOn(Schedulers.io())  // 在IO线程处理
                     .subscribe(
-                            result -> {
-                                // 发送单条 构造SSE消息格式
-                                String eventData = result.getOutput().getChoices().get(0).getMessage().getContent();
-                                emitter.send(SseEmitter.event()
-                                        .data(eventData)
-                                );
+                            message -> {
+                                //解析think和ans
+                                String content = message.getOutput().getChoices().get(0).getMessage().getContent();
+                                String reason = message.getOutput().getChoices().get(0).getMessage().getReasoningContent();
+                                if (content != null && !content.isEmpty()) {
+                                    ansSb.append(content);
+                                    JSONObject answerObj = new JSONObject();
+                                    answerObj.put("type", "answer");
+                                    answerObj.put("data", content);
+                                    emitter.send(SseEmitter.event().data(answerObj.toString()));
+                                }
+                                if (reason != null && !reason.isEmpty()) {
+                                    thkSb.append(reason);
+                                    JSONObject thinkObj = new JSONObject();
+                                    thinkObj.put("type", "think");
+                                    thinkObj.put("data", reason);
+                                    emitter.send(SseEmitter.event().data(thinkObj.toString()));
+                                }
                             },
                             error -> {
                                 // 错误处理
@@ -112,14 +152,19 @@ public class DiaServiceImpl implements DiaService {
                                 // 流正常结束
                                 // 异步执行数据库写入
                                 CompletableFuture.runAsync(() -> {
-                                    preMessage.put(Role.SYSTEM.getValue(), sb.toString());
+                                    //打包JSON
+                                    JSONObject json=new JSONObject();
+                                    json.put("thk",thkSb.toString());
+                                    json.put("ans",ansSb.toString());
+
+                                    preMessage.put(Role.SYSTEM.getValue(), json.toString());
                                     diaPO.setContent(preMessage.toString());
-                                    diaMapper.insert(diaPO);
+                                    diaMapper.updateContent(diaPO.getId(),diaPO.getContent());
                                 }).thenRun(() -> {
                                     try {
-                                        emitter.send(SseEmitter.event().name("complete").data("END")); // 可选结束标记
+                                        emitter.send(SseEmitter.event().data("END")); // 可选结束标记
                                     } catch (IOException e) {
-                                        throw new RuntimeException(e);
+                                        log.error(e.getMessage());
                                     }
                                     emitter.complete();
                                 }).exceptionally(e -> {
