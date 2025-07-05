@@ -4,7 +4,6 @@ import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.po.DiaPO;
 import com.soultalk.service.DiaService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -33,10 +32,9 @@ public class DialogueController {
         }
     }
 
-    //通过ID获取对话
+    //通过ID获取对话详细
     @GetMapping("/getDia")
     public R getDia(@RequestParam("id") Long diaId) {
-
         return R.Success(diaService.getDiaById(diaId));
     }
 
@@ -66,39 +64,38 @@ public class DialogueController {
         return diaService.streamQuestion(diaId, question);
     }
 
-    //查找对话详细信息
-//    @GetMapping("/select/info")
-//    public R selectInfo(@RequestParam Integer diaId) {
-//        return diaService.selectInfo(diaId);
-//    }
-
     //清除上下文
-//    @PostMapping("/remove/content")
-//    public R removeContent(@RequestParam Integer diaId) {
-//        return diaService.removeContent(diaId);
-//    }
+    @PostMapping("/remove/content")
+    public R removeContent(@RequestParam Long diaId) {
+        try {
+            Long userId = Long.parseLong(BaseContext.getCurrentId());
+            diaService.removeContent(userId, diaId);
+            return R.Success(diaId + " 清除成功");
+        } catch (Exception e) {
+            return R.Success(e.getMessage());
+        }
+    }
 
     //删除对话
-//    @PostMapping("/remove/all")
-//    public R removeDia(@RequestParam Integer diaId) {
-//        return diaService.removeDia(diaId);
-//    }
+    @PostMapping("/remove/all")
+    public R removeDia(@RequestParam Long diaId) {
+        try {
+            Long userId = Long.parseLong(BaseContext.getCurrentId());
+            diaService.removeDia(userId, diaId);
+            return R.Success(diaId + " 已删除");
+        } catch (Exception e) {
+            return R.Success(e.getMessage());
+        }
+    }
 
     //置顶与不置顶
-//    @PostMapping("/update/level")
-//    public R updateLevel(@RequestParam Integer diaId, @RequestParam Integer level) {
-//        return diaService.updateLevel(diaId, level);
-//    }
-
-    //对话详细页
-//    @GetMapping("/detail")
-//    public R detail(@RequestParam Integer diaId, HttpServletRequest request) {
-//        String userName = (String) request.getAttribute("username");
-//        UserDTO user = userMapper.selectByName(userName);
-//        if (user == null) {
-//            return R.Failed("未找到用户信息");
-//        }
-//        return diaService.diaDetail(diaId, user);
-//    }
-
+    @PostMapping("/update/level")
+    public R updateLevel(@RequestParam Long diaId, @RequestParam Integer level) {
+        try {
+            diaService.updateLevel(diaId, level);
+            return R.Success(diaId + " 已更新");
+        } catch (Exception e) {
+            return R.Failed(e.getMessage());
+        }
+    }
 }

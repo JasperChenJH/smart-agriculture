@@ -10,6 +10,20 @@
         set content=#{content}
         where id=#{id}
     </update>
+    <delete id="delete">
+        delete from soultalk.dia
+        where id=#{id}
+    </delete>
+    <update id="deleteContent">
+        update soultalk.dia
+        set content=null
+        where id= #{id}
+    </update>
+    <update id="updateLevel">
+        update soultalk.dia
+        set level= #{level}
+        where id= #{id}
+    </update>
     <select id="selectRangeDia" resultType="com.soultalk.po.DiaPO">
         select *
         from soultalk.dia

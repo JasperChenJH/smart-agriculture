@@ -20,4 +20,13 @@ public interface DiaService {
 
     //流式请求
     SseEmitter streamQuestion(Long diaId, String question);
+
+    //清空上下文
+    void removeContent(Long userId, Long diaId) throws Exception;
+
+    //删除对话
+    void removeDia(Long userId, Long diaId) throws Exception;
+
+    //调整置顶等级
+    void updateLevel(Long diaId, Integer level);
 }

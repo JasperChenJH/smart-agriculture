@@ -10,12 +10,12 @@ import lombok.NoArgsConstructor;
 public class AgentPO {
     private Long id;
     private String name;
+    private String introduction;
     private Long creator;
     private Long createTime;
     private Integer pub;
-    private String prompt;
-    private String introduction;
-    private String photo;
     private String model;
+    private String prompt;
     private String api;
+    private String photo;
 }

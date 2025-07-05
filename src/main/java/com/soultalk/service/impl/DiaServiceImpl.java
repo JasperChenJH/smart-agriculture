@@ -13,7 +13,6 @@ import com.soultalk.po.DiaPO;
 import com.soultalk.service.DiaService;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import io.swagger.v3.core.util.Json;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,22 +110,22 @@ public class DiaServiceImpl implements DiaService {
 
         //获取系统提示词
         String systemPrompt = null;
-        if(agent!=null) {
-            systemPrompt=agent.getPrompt();
+        if (agent != null) {
+            systemPrompt = agent.getPrompt();
         }
 
         //获取上下文
-        String str=diaPO.getContent();
+        String str = diaPO.getContent();
         List<JSONObject> messageList;
-        if(str==null || str.isEmpty()){
+        if (str == null || str.isEmpty()) {
             messageList = new ArrayList<>();
-        }else{
-            messageList= JSON.parseArray( str, JSONObject.class);
+        } else {
+            messageList = JSON.parseArray(str, JSONObject.class);
         }
 
         //异步生成发送
         try {
-            Disposable disposable = tongYiSource.streamCall(modelName,systemPrompt , messageList, question)
+            Disposable disposable = tongYiSource.streamCall(modelName, systemPrompt, messageList, question)
                     .subscribeOn(Schedulers.io())  // 在IO线程处理
                     .subscribe(
                             message -> {
@@ -157,19 +156,19 @@ public class DiaServiceImpl implements DiaService {
                                 // 异步执行数据库写入
                                 CompletableFuture.runAsync(() -> {
                                     //打包提问JSON
-                                    JSONObject ques=new JSONObject();
+                                    JSONObject ques = new JSONObject();
                                     ques.put(Role.USER.getValue(), question);
                                     //打包回答JSON
-                                    JSONObject ans=new JSONObject();
-                                    ans.put("thk",thkSb.toString());
-                                    ans.put("ans",ansSb.toString());
-                                    JSONObject answer=new JSONObject();
+                                    JSONObject ans = new JSONObject();
+                                    ans.put("thk", thkSb.toString());
+                                    ans.put("ans", ansSb.toString());
+                                    JSONObject answer = new JSONObject();
                                     answer.put(Role.SYSTEM.getValue(), ans);
                                     //保存数据库
                                     messageList.add(ques);
                                     messageList.add(answer);
                                     diaPO.setContent(messageList.toString());
-                                    diaMapper.updateContent(diaPO.getId(),diaPO.getContent());
+                                    diaMapper.updateContent(diaPO.getId(), diaPO.getContent());
                                 }).thenRun(() -> {
                                     try {
                                         emitter.send(SseEmitter.event().data("END")); // 可选结束标记
@@ -193,6 +192,35 @@ public class DiaServiceImpl implements DiaService {
             log.error(e.getMessage());
         }
         return emitter;
+    }
+
+    @Override
+    public void removeContent(Long userId, Long diaId) throws Exception {
+        DiaPO diaPO = diaMapper.selectDiaById(diaId);
+        if (diaPO == null) {
+            throw new Exception("对话不存在");
+        }
+        if (!diaPO.getUserId().equals(userId)) {
+            throw new Exception("无权限");
+        }
+        diaMapper.deleteContent(diaId);
+    }
+
+    @Override
+    public void removeDia(Long userId, Long diaId) throws Exception {
+        DiaPO diaPO = diaMapper.selectDiaById(diaId);
+        if (diaPO == null) {
+            throw new Exception("对话不存在");
+        }
+        if (!diaPO.getUserId().equals(userId)) {
+            throw new Exception("无权限");
+        }
+        diaMapper.delete(diaId);
+    }
+
+    @Override
+    public void updateLevel(Long diaId, Integer level) {
+        diaMapper.updateLevel(diaId, level);
     }
 
 }

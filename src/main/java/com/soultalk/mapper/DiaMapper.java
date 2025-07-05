@@ -17,4 +17,10 @@ public interface DiaMapper {
     Long countByUserId(Long id);
 
     void updateContent(Long id, String content);
+
+    void updateLevel(Long id, Integer level);
+
+    void deleteContent(Long id);
+
+    void delete(Long id);
 }

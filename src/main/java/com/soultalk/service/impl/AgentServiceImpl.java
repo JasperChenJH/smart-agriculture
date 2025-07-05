@@ -3,7 +3,6 @@ package com.soultalk.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.soultalk.controller.request.R;
 import com.soultalk.mapper.AgentMapper;
-import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.AgentPO;
 import com.soultalk.service.AgentService;
 import com.soultalk.service.BaseService;
@@ -12,11 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 @Slf4j
 public class AgentServiceImpl implements AgentService {
-    @Autowired
-    private UserMapper userMapper;
     @Autowired
     private BaseService baseService;
     @Autowired
@@ -61,5 +61,92 @@ public class AgentServiceImpl implements AgentService {
         //保存智能体
         agentMapper.insert(agent);
         return R.Success(agent.getName() + " 智能体已成功创建");
+    }
+
+    @Override
+    public List<AgentPO> selectByUserId(Long userId) {
+        return agentMapper.selectByUserId(userId);
+    }
+
+    @Override
+    public Map<String, Object> selectAgentInfo(Long agentId) {
+        AgentPO agent = agentMapper.selectById(agentId);
+        if (agent == null) {
+            return null;
+        }
+
+        return (Map<String, Object>) JSONObject.toJSON(agent);
+    }
+
+    @Override
+    public List<AgentPO> selectLikeAgent(Long userId, String name) {
+        List<AgentPO> list = agentMapper.selectLikeByName(name);
+        for (AgentPO agent : list) {
+            if (!agent.getCreator().equals(userId) && agent.getPub() == 0) {
+                list.remove(agent);
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public R updateAgent(Long agentId, String jsonData, MultipartFile photo) {
+        AgentPO agent = agentMapper.selectById(agentId);
+
+        //读取agent信息
+        AgentPO newAgentInfo;
+        try {
+            newAgentInfo = JSONObject.parseObject(jsonData, AgentPO.class);
+        } catch (Exception e) {
+            return R.Failed("数据格式有错误！");
+        }
+
+        //逐个校验数据
+        if (newAgentInfo.getName() != null) {
+            agent.setName(newAgentInfo.getName());
+        }
+        if (newAgentInfo.getIntroduction() != null) {
+            agent.setIntroduction(newAgentInfo.getIntroduction());
+        }
+        if (newAgentInfo.getCreator() != null) {
+            agent.setCreator(newAgentInfo.getCreator());
+        }
+        if (newAgentInfo.getPub() != null) {
+            agent.setPub(newAgentInfo.getPub());
+        }
+        if (newAgentInfo.getModel() != null) {
+            agent.setModel(newAgentInfo.getModel());
+        }
+        if (newAgentInfo.getPrompt() != null) {
+            agent.setPrompt(newAgentInfo.getPrompt());
+        }
+        if (newAgentInfo.getApi() != null) {
+            agent.setApi(newAgentInfo.getApi());
+        }
+
+        //解析图片
+        //TODO: 可以做图片删除
+        if (!photo.isEmpty()) {
+            String url = baseService.saveFileToOSS(photo.getOriginalFilename(), photo);
+            if (url != null) {
+                agent.setPhoto(url);
+            }
+        }
+
+
+        //api和模型必有一个
+        if (agent.getModel() == null && agent.getApi() == null) {
+            return R.Failed("数据结构错误");
+        }
+
+        //保存智能体
+        agent.setCreateTime(System.currentTimeMillis());
+        agentMapper.update(agent);
+        return R.Success(agent.getName() + " 智能体信息已更新");
+    }
+
+    @Override
+    public List<AgentPO> selectMyAgent(Long userId) {
+        return agentMapper.selectMyAgent(userId);
     }
 }

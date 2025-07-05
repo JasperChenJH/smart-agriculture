@@ -5,6 +5,19 @@
         insert into soultalk.agent(name, creator, create_time, pub, prompt, introduction, photo, api)
         values (#{name}, #{creator}, #{createTime}, #{pub}, #{prompt}, #{introduction}, #{photo}, #{api})
     </insert>
+    <update id="update">
+        update soultalk.agent
+        set name = #{name},
+            introduction = #{introduction},
+            creator = #{creator},
+            create_time = #{createTime},
+            pub = #{pub},
+            model = #{model},
+            prompt = #{prompt},
+            api = #{api},
+            photo = #{photo}
+        where id = #{id}
+    </update>
     <select id="countById" resultType="java.lang.Integer">
         select count(*)
         from soultalk.agent
@@ -13,6 +26,22 @@
     <select id="selectById" resultType="com.soultalk.po.AgentPO">
         select *
         from soultalk.agent
-        where id=#{id}
+        where id = #{id}
+    </select>
+    <select id="selectByUserId" resultType="com.soultalk.po.AgentPO">
+        select *
+        from soultalk.agent
+        where creator = #{userId}
+           or pub = 1
+    </select>
+    <select id="selectLikeByName" resultType="com.soultalk.po.AgentPO">
+        select *
+        from soultalk.agent
+        where name like concat('%', #{name}, '%')
+    </select>
+    <select id="selectMyAgent" resultType="com.soultalk.po.AgentPO">
+        select *
+        from soultalk.agent
+        where creator = #{userId}
     </select>
 </mapper>
