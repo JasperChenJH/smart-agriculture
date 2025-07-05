@@ -4,6 +4,7 @@ import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson2.JSON;
 import com.soultalk.aigc.AIGCSource;
 import com.soultalk.mapper.AgentMapper;
 import com.soultalk.mapper.DiaMapper;
@@ -12,6 +13,7 @@ import com.soultalk.po.DiaPO;
 import com.soultalk.service.DiaService;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import io.swagger.v3.core.util.Json;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -113,16 +116,17 @@ public class DiaServiceImpl implements DiaService {
         }
 
         //获取上下文
-        JSONObject preMessage;
-        if (diaPO.getContent() != null && !diaPO.getContent().isEmpty()) {
-            preMessage = JSONObject.parseObject(diaPO.getContent(), JSONObject.class);
-        } else {
-            preMessage = new JSONObject();
+        String str=diaPO.getContent();
+        List<JSONObject> messageList;
+        if(str==null || str.isEmpty()){
+            messageList = new ArrayList<>();
+        }else{
+            messageList= JSON.parseArray( str, JSONObject.class);
         }
 
         //异步生成发送
         try {
-            Disposable disposable = tongYiSource.streamCall(modelName,systemPrompt , preMessage, question)
+            Disposable disposable = tongYiSource.streamCall(modelName,systemPrompt , messageList, question)
                     .subscribeOn(Schedulers.io())  // 在IO线程处理
                     .subscribe(
                             message -> {
@@ -152,13 +156,19 @@ public class DiaServiceImpl implements DiaService {
                                 // 流正常结束
                                 // 异步执行数据库写入
                                 CompletableFuture.runAsync(() -> {
-                                    //打包JSON
-                                    JSONObject json=new JSONObject();
-                                    json.put("thk",thkSb.toString());
-                                    json.put("ans",ansSb.toString());
-
-                                    preMessage.put(Role.SYSTEM.getValue(), json.toString());
-                                    diaPO.setContent(preMessage.toString());
+                                    //打包提问JSON
+                                    JSONObject ques=new JSONObject();
+                                    ques.put(Role.USER.getValue(), question);
+                                    //打包回答JSON
+                                    JSONObject ans=new JSONObject();
+                                    ans.put("thk",thkSb.toString());
+                                    ans.put("ans",ansSb.toString());
+                                    JSONObject answer=new JSONObject();
+                                    answer.put(Role.SYSTEM.getValue(), ans);
+                                    //保存数据库
+                                    messageList.add(ques);
+                                    messageList.add(answer);
+                                    diaPO.setContent(messageList.toString());
                                     diaMapper.updateContent(diaPO.getId(),diaPO.getContent());
                                 }).thenRun(() -> {
                                     try {

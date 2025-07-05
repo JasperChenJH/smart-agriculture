@@ -8,15 +8,11 @@ import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.ApiException;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.soultalk.config.Configs;
-import com.soultalk.mapper.AgentMapper;
-import com.soultalk.mapper.DiaMapper;
-import com.soultalk.po.DiaPO;
 import io.reactivex.Flowable;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -28,12 +24,12 @@ import java.util.Map;
 public class TongYiSource implements AIGCSource {
 
     @Override
-    public String call(String modelName, String systemPrompt, JSONObject content, String question) {
+    public String call(String modelName, String systemPrompt, List<JSONObject> contentList, String question) {
         return "";
     }
 
     @Override
-    public Flowable<GenerationResult> streamCall(String modelName, String systemPrompt, JSONObject content, String question) throws NoApiKeyException, ApiException, InputRequiredException {
+    public Flowable<GenerationResult> streamCall(String modelName, String systemPrompt, List<JSONObject> contentList, String question) throws NoApiKeyException, ApiException, InputRequiredException {
         List<Message> messageList = new ArrayList<>();
 
         //写入系统提示词
@@ -46,21 +42,24 @@ public class TongYiSource implements AIGCSource {
         }
 
         //整理历史对话
-        content.put(Role.USER.getValue(), question);
-        for (Map.Entry<String, Object> map : content.entrySet()) {
-            String mes = null;
-            if (map.getKey().equals(Role.USER.getValue())) {
-                mes = (String) map.getValue();
-            } else {
-                mes =JSONObject.parseObject((String)map.getValue()).getString("ans");
-            }
+        String mess = "";
+        for (JSONObject json : contentList) {
+            for (Map.Entry<String, Object> entry : json.entrySet()) {
+                if (entry.getKey().equals(Role.USER.getValue())) {
+                    mess = entry.getValue().toString();
+                } else if (entry.getKey().equals(Role.SYSTEM.getValue())) {
+                    mess = JSON.parseObject(entry.getValue().toString(), JSONObject.class).getString("ans");
+                }
 
-            if (mes == null || mes.isEmpty()) continue;
-            Message m = Message.builder()
-                    .role(map.getKey())
-                    .content(mes)
-                    .build();
-            messageList.add(m);
+                if (mess.isEmpty()) {
+                    continue;
+                }
+                Message m = Message.builder()
+                        .role(entry.getKey())
+                        .content(mess)
+                        .build();
+                messageList.add(m);
+            }
         }
 
         //调用API

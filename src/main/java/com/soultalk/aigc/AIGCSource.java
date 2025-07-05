@@ -8,8 +8,10 @@ import com.alibaba.fastjson.JSONObject;
 import io.reactivex.Flowable;
 import org.springframework.stereotype.Component;
 
-public interface AIGCSource {
-    String call(String modelName,String systemPrompt, JSONObject content,String question);
+import java.util.List;
 
-    Flowable<GenerationResult> streamCall(String modelName,String systemPrompt, JSONObject content,String question) throws NoApiKeyException, ApiException, InputRequiredException;
+public interface AIGCSource {
+    String call(String modelName,String systemPrompt, List<JSONObject> contentList,String question);
+
+    Flowable<GenerationResult> streamCall(String modelName, String systemPrompt, List<JSONObject> contentList, String question) throws NoApiKeyException, ApiException, InputRequiredException;
 }

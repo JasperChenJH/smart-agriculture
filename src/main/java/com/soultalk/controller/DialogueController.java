@@ -4,6 +4,7 @@ import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.po.DiaPO;
 import com.soultalk.service.DiaService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +36,7 @@ public class DialogueController {
     //通过ID获取对话
     @GetMapping("/getDia")
     public R getDia(@RequestParam("id") Long diaId) {
+
         return R.Success(diaService.getDiaById(diaId));
     }
 
