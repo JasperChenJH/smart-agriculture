@@ -25,11 +25,11 @@ public class MainAgentController {
     public R create() {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
         try {
-            Long diaId=mainAgentService.createDia(userId);
+            Long diaId = mainAgentService.createDia(userId);
             assert diaId != null;
 
-            return R.Success(diaId+" 已创建");
-        }catch (Exception e){
+            return R.Success(diaId + " 已创建");
+        } catch (Exception e) {
             log.error(e.getMessage());
             return R.Success(e.getMessage());
         }

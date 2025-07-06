@@ -9,7 +9,7 @@ import java.util.List;
 
 @Mapper
 public interface UserEmotionRecordMapper {
-    
+
     Page<UserEmotionRecordPO> getEmotionPageList(Long userId);
 
     void insert(UserEmotionRecordPO userEmotionRecord);

@@ -75,9 +75,9 @@ public class UserServiceImpl implements UserService {
     public PageResult getEmotionPageList(Integer page, Integer size) {
         Long userId = Long.valueOf(BaseContext.getCurrentId());
         PageHelper.startPage(page, size);
-        Page<UserEmotionRecordPO> list =  emotionRecordMapper.getEmotionPageList(userId);
+        Page<UserEmotionRecordPO> list = emotionRecordMapper.getEmotionPageList(userId);
         List<UserEmotionRecordPO> records = list.getResult();
-        return new PageResult(list.getTotal(),records);
+        return new PageResult(list.getTotal(), records);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class UserServiceImpl implements UserService {
         LocalDateTime endTime = LocalDateTime.now();
         LocalDateTime startTime = endTime.minusDays(days);
         Long userId = Long.valueOf(BaseContext.getCurrentId());
-        List<UserEmotionRecordPO> list = emotionRecordMapper.getEmotionChatList(userId, items, startTime,endTime);
+        List<UserEmotionRecordPO> list = emotionRecordMapper.getEmotionChatList(userId, items, startTime, endTime);
         return list;
     }
 

@@ -1,12 +1,8 @@
 package com.soultalk.service;
 
-import com.alibaba.fastjson.JSONObject;
-import com.soultalk.po.AgentPO;
-import com.soultalk.po.DiaPO;
 import com.soultalk.po.MainDiaPO;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.List;
 import java.util.Map;
 
 public interface MainAgentService {

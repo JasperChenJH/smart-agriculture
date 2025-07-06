@@ -9,13 +9,11 @@ import com.soultalk.po.UserInfoPO;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.AuthService;
 import com.soultalk.utils.JwtUtils;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("用户名或者密码错误");
     }
+
     @Transactional
     @Override
     public ResponseEntity<?> register(String name, String password) {
