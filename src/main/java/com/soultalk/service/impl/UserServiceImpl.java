@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteBatch(List<Long> ids) {
-        userMapper.deleteBatch(ids);
+        emotionRecordMapper.deleteBatch(ids);
     }
 
     @Override

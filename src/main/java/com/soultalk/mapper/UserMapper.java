@@ -21,5 +21,5 @@ public interface UserMapper {
 
     void update(UserPO user);
 
-    void deleteBatch(List<Long> ids);
+
 }
