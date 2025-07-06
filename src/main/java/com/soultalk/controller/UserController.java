@@ -3,6 +3,9 @@ package com.soultalk.controller;
 import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.mapper.UserMapper;
+import com.soultalk.po.PageResult;
+import com.soultalk.po.UserEmotionRecordPO;
+import com.soultalk.po.UserInfoPO;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.AuthService;
 import com.soultalk.service.UserService;
@@ -10,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * 用户基本信息表
@@ -49,4 +54,39 @@ public class UserController {
             return R.Success("密码错误");
         }
     }
+
+    /**
+     * 获取用户详细信息
+     * @return
+     */
+    @GetMapping("/detail/info")
+    public R getDetailInfo(){
+        UserInfoPO userInfo = userService.getDetailInfo();
+        return R.Success(userInfo);
+    }
+
+    /**
+     * 修改用户详细信息
+     * @param userInfo
+     * @return
+     */
+    @PostMapping("/detail/update")
+    public R updateDetailInfo(@RequestBody UserInfoPO userInfo){
+        userService.updateDetailInfo(userInfo);
+        return R.Success("修改成功");
+    }
+
+    /**
+     * 用户情感得分列表
+     * @param page
+     * @param size
+     * @return
+     */
+
+    @GetMapping("/emotion/pagelist")
+    public R getEmotionPageList(@RequestParam("page") Integer page, @RequestParam("size") Integer size) {
+        PageResult pageResult = userService.getEmotionPageList(page, size);
+        return R.Success(pageResult);
+    }
+
 }

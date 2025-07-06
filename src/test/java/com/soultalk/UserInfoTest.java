@@ -1,17 +1,16 @@
 package com.soultalk;
 
-import com.soultalk.service.DiaService;
+import com.soultalk.service.UserService;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SoulTalkApplicationTests {
+public class UserInfoTest {
     @Resource
-    private DiaService diaService;
+    UserService userService;
     @Test
-    void contextLoads() {
+    public void testGetDetailInfo(){
 
     }
-
 }

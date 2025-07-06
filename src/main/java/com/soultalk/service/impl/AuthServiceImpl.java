@@ -1,7 +1,9 @@
 package com.soultalk.service.impl;
 
 import com.soultalk.controller.request.JwtResponse;
+import com.soultalk.mapper.UserInfoMapper;
 import com.soultalk.mapper.UserMapper;
+import com.soultalk.po.UserInfoPO;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.AuthService;
 import com.soultalk.utils.JwtUtils;
@@ -11,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -19,6 +22,8 @@ public class AuthServiceImpl implements AuthService {
     private UserMapper userMapper;
     @Autowired
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+    @Autowired
+    private UserInfoMapper userInfoMapper;
 
     @Override
     public ResponseEntity<?> login(String name, String password) {
@@ -29,7 +34,7 @@ public class AuthServiceImpl implements AuthService {
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("用户名或者密码错误");
     }
-
+    @Transactional
     @Override
     public ResponseEntity<?> register(String name, String password) {
         // 检查用户名重复
@@ -50,6 +55,10 @@ public class AuthServiceImpl implements AuthService {
         user.setTime(System.currentTimeMillis());
         userMapper.insert(user);
 
+        //注册之后添加用户详细详细表
+        UserInfoPO userInfo = new UserInfoPO();
+        userInfo.setUserId(user.getId());
+        userInfoMapper.insertDetailInfo(userInfo);
         return ResponseEntity.ok("注册成功");
     }
 

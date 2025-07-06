@@ -84,6 +84,7 @@ public class DiaServiceImpl implements DiaService {
     @Override
     public SseEmitter streamQuestion(Long diaId, String question) {
         //获取对话和模型情况
+
         AgentPO agent = null;
         DiaPO diaPO = diaMapper.selectDiaById(diaId);
         assert diaPO != null;

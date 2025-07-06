@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.soultalk.mapper.UserMapper">
-    <insert id="insert">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         insert into soultalk.user(name, password, time)
         values (#{name}, #{password}, #{time})
     </insert>
@@ -33,5 +33,11 @@
         select time
         from soultalk.user
         where id = #{id}
+    </select>
+    <select id="getEmotionPageList" resultType="com.soultalk.po.UserEmotionRecordPO">
+        select *
+        from soultalk.user_emotion_records
+        where user_id = #{userId}
+        order by create_time desc
     </select>
 </mapper>

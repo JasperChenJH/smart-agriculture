@@ -1,5 +1,7 @@
 package com.soultalk.mapper;
 
+import com.github.pagehelper.Page;
+import com.soultalk.po.UserEmotionRecordPO;
 import com.soultalk.po.UserPO;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -16,4 +18,6 @@ public interface UserMapper {
     void insert(UserPO user);
 
     void update(UserPO user);
+
+    Page<UserEmotionRecordPO> getEmotionPageList(Long userId);
 }
