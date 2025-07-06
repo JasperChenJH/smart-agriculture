@@ -15,7 +15,7 @@ public class JwtUtils {
         return JWT.create()
                 .withSubject(String.valueOf(userId)) // 设置JWT的主题
                 .withIssuedAt(new Date()) // 设置签发时间
-                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 设置过期时间，24小时
+                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7)) // 设置过期时间，7天后过期
                 .sign(Algorithm.HMAC512(JWT_SECRET_KEY)); // 使用HMAC算法进行签名
     }
 
