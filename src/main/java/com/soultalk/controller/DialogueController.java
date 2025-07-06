@@ -11,6 +11,9 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
+/**
+ * 对话控制器
+ */
 @Slf4j
 @CrossOrigin
 @RestController

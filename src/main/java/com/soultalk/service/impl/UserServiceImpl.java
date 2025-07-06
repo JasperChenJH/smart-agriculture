@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -77,6 +78,20 @@ public class UserServiceImpl implements UserService {
         Page<UserEmotionRecordPO> list =  emotionRecordMapper.getEmotionPageList(userId);
         List<UserEmotionRecordPO> records = list.getResult();
         return new PageResult(list.getTotal(),records);
+    }
+
+    @Override
+    public void deleteBatch(List<Long> ids) {
+        userMapper.deleteBatch(ids);
+    }
+
+    @Override
+    public List<UserEmotionRecordPO> getEmotionChart(Integer items, Integer days) {
+        LocalDateTime endTime = LocalDateTime.now();
+        LocalDateTime startTime = endTime.minusDays(days);
+        Long userId = Long.valueOf(BaseContext.getCurrentId());
+        List<UserEmotionRecordPO> list = emotionRecordMapper.getEmotionChatList(userId, items, startTime,endTime);
+        return list;
     }
 
 

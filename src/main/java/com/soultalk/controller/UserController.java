@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 /**
- * 用户基本信息表
+ * 用户信息
  */
 @RestController
 @RequestMapping("/user")
@@ -29,18 +29,33 @@ public class UserController {
     @Autowired
     private UserMapper userMapper;
 
+    /**
+     * 测试
+     * @return
+     */
     @PostMapping("/hello")
     public ResponseEntity<?> hello() {
         System.out.println(BaseContext.getCurrentId());
         return ResponseEntity.ok("hello");
     }
-
+    /**
+     * 获取用户基本信息
+     * @return
+     */
     @GetMapping("/info")
     public R info() {
         Long id = Long.valueOf(BaseContext.getCurrentId());
         return R.Success(userService.info(id));
     }
 
+    /**
+     * 修改用户基本信息
+     * @param name
+     * @param password
+     * @param introduce
+     * @param photo
+     * @return
+     */
     @PostMapping("/update")
     public R update(@RequestParam("name") String name,
                     @RequestParam("password") String password,
@@ -87,6 +102,29 @@ public class UserController {
     public R getEmotionPageList(@RequestParam("page") Integer page, @RequestParam("size") Integer size) {
         PageResult pageResult = userService.getEmotionPageList(page, size);
         return R.Success(pageResult);
+    }
+
+    /**
+     * 删除用户情感得分记录
+     * @param ids 情感id集合
+     */
+    @DeleteMapping("/emotion/delete")
+    public R delete(@RequestParam List<Long> ids) {
+        userService.deleteBatch(ids);
+        return R.Success("删除成功");
+    }
+
+    /**
+     * 绘制情感得分图
+     * @param items 记录条数 默认20条
+     * @param days  最近多少天 默认3天
+     * @return 情感得分集合
+     */
+    @GetMapping("/emotion/chart")
+    public R getEmotionChart(@RequestParam(value = "items",defaultValue = "20") Integer items,
+                             @RequestParam(value = "days",defaultValue = "3") Integer days) {
+        List<UserEmotionRecordPO> result = userService.getEmotionChart(items, days);
+        return R.Success(result);
     }
 
 }

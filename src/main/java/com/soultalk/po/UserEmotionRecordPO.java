@@ -14,7 +14,7 @@ public class UserEmotionRecordPO {
     /**
      * 情绪记录ID，主键自增
      */
-    private Integer id;
+    private Long id;
     
     /**
      * 用户ID，关联用户表

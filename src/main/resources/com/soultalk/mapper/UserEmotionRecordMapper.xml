@@ -11,4 +11,11 @@
         where user_id = #{userId} and status = 1
         order by create_time desc
     </select>
+    <select id="getEmotionChatList" resultType="com.soultalk.po.UserEmotionRecordPO">
+        select *
+        from soultalk.user_emotion_records
+        where user_id = #{userId} and status = 1 and create_time between #{startTime} and #{endTime}
+        order by create_time desc
+        limit #{items}
+    </select>
 </mapper>

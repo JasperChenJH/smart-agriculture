@@ -14,6 +14,13 @@
             photo=#{photo}
         where id = #{id}
     </update>
+    <delete id="deleteBatch" >
+        delete from soultalk.user_emotion_records
+        where id in
+        <foreach item="id" collection="list" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
     <select id="selectByName" resultType="com.soultalk.po.UserPO">
         select *
         from soultalk.user

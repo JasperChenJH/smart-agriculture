@@ -5,6 +5,8 @@ import com.soultalk.po.UserEmotionRecordPO;
 import com.soultalk.po.UserPO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 @Mapper
 public interface UserMapper {
     UserPO selectByName(String name);
@@ -19,4 +21,5 @@ public interface UserMapper {
 
     void update(UserPO user);
 
+    void deleteBatch(List<Long> ids);
 }
