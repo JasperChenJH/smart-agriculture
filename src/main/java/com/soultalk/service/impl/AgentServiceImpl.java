@@ -81,11 +81,7 @@ public class AgentServiceImpl implements AgentService {
     @Override
     public List<AgentPO> selectLikeAgent(Long userId, String name) {
         List<AgentPO> list = agentMapper.selectLikeByName(name);
-        for (AgentPO agent : list) {
-            if (!agent.getCreator().equals(userId) && agent.getPub() == 0) {
-                list.remove(agent);
-            }
-        }
+        list.removeIf(agent -> !agent.getCreator().equals(userId) && agent.getPub() == 0);
         return list;
     }
 

@@ -7,13 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DiaPO {
+public class MainDiaPO {
     private Long id;
     private Long userId;
-    private Integer isAgent;
-    private Long agentId;
-    private Integer level;
-    private String model;
     private String content;
-    private Long updateTime;
+    private Long time;
 }

@@ -36,7 +36,7 @@ public class DiaServiceImpl implements DiaService {
     private AIGCSource tongYiSource;
 
     @Override
-    public long createDia(Long userId, Long agentId) {
+    public Long createDia(Long userId, Long agentId) {
         DiaPO dia = new DiaPO();
         dia.setUserId(userId);
         //检查绑定agent
@@ -58,7 +58,7 @@ public class DiaServiceImpl implements DiaService {
     }
 
     @Override
-    public long countDiaByUserId(Long userId) {
+    public Long countDiaByUserId(Long userId) {
         return diaMapper.countByUserId(userId);
     }
 
