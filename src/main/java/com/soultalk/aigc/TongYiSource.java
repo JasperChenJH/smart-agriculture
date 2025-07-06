@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 @Slf4j
 @Component
@@ -103,7 +102,11 @@ public class TongYiSource implements AIGCSource {
         Generation gen = new Generation();
         GenerationParam param = GenerationParam.builder()
                 .apiKey(Configs.DASHSCOPE_API_KEY)
+                //选择模型
                 .model(modelName)
+                //本次问题
+                .prompt(question)
+                //历史对话
                 .messages(messageList)
                 // Qwen3开源版模型只支持设定为"message"
                 .resultFormat(GenerationParam.ResultFormat.MESSAGE)
@@ -182,11 +185,12 @@ public class TongYiSource implements AIGCSource {
         //调用API
         ApplicationParam param = ApplicationParam.builder()
                 .apiKey(Configs.DASHSCOPE_API_KEY)
+                //api id
                 .appId(appKey)
+                //本次问题
+                .prompt(question)
                 //历史对话
                 .messages(messageList)
-                //问题
-                .prompt(question)
                 // 深度思考
                 .hasThoughts(true)
                 // 增量输出

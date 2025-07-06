@@ -152,6 +152,7 @@ public class DiaServiceImpl implements DiaService {
                                     answerObj.put("data", content);
                                     emitter.send(SseEmitter.event()
                                             .data(answerObj.toString())
+                                            .reconnectTime(5000L)//5秒重连
                                     );
                                 }
                                 if (reason != null && !reason.isEmpty()) {
@@ -161,6 +162,7 @@ public class DiaServiceImpl implements DiaService {
                                     thinkObj.put("data", reason);
                                     emitter.send(SseEmitter.event()
                                             .data(thinkObj.toString())
+                                            .reconnectTime(5000L)//5秒重连
                                     );
                                 }
                             },
@@ -243,7 +245,7 @@ public class DiaServiceImpl implements DiaService {
                     .subscribe(
                             message -> {
                                 //解析think和ans
-                                String content=message.getOutput().getText();
+                                String content = message.getOutput().getText();
                                 if (content != null && !content.isEmpty()) {
                                     ansSb.append(content);
                                     JSONObject answerObj = new JSONObject();
