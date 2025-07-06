@@ -2,8 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.soultalk.mapper.UserMapper">
     <insert id="insert">
-        insert into soultalk.user(name, password,time)
-        values (#{name}, #{password},#{time})
+        insert into soultalk.user(name, password, time)
+        values (#{name}, #{password}, #{time})
     </insert>
     <update id="update">
         update soultalk.user

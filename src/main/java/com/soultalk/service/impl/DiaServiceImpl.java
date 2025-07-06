@@ -91,10 +91,22 @@ public class DiaServiceImpl implements DiaService {
             agent = agentMapper.selectById(diaPO.getAgentId());
         }
 
+        //分辨是模型提问还是应用
+        if (agent != null && agent.getApi() != null && !agent.getApi().isEmpty()) {
+            //应用
+            return streamAppQuestion(agent, diaPO, question);
+        } else {
+            return streamModelQuestion(agent, diaPO, question);
+        }
+
+    }
+
+    @Override
+    public SseEmitter streamModelQuestion(AgentPO agent, DiaPO diaPO, String question) {
         // 1. 创建SseEmitter（超时设为3分钟）
         SseEmitter emitter = new SseEmitter(180_000L);
 
-        // 2. 订阅Flowable
+        // 2. 结果缓存
         StringBuilder ansSb = new StringBuilder();
         StringBuilder thkSb = new StringBuilder();
 
@@ -138,15 +150,116 @@ public class DiaServiceImpl implements DiaService {
                                     JSONObject answerObj = new JSONObject();
                                     answerObj.put("type", "answer");
                                     answerObj.put("data", content);
-                                    emitter.send(SseEmitter.event().data(answerObj.toString()));
+                                    emitter.send(SseEmitter.event()
+                                            .data(answerObj.toString())
+                                    );
                                 }
                                 if (reason != null && !reason.isEmpty()) {
                                     thkSb.append(reason);
                                     JSONObject thinkObj = new JSONObject();
                                     thinkObj.put("type", "think");
                                     thinkObj.put("data", reason);
-                                    emitter.send(SseEmitter.event().data(thinkObj.toString()));
+                                    emitter.send(SseEmitter.event()
+                                            .data(thinkObj.toString())
+                                    );
                                 }
+                            },
+                            error -> {
+                                // 错误处理
+                                log.error(error.getMessage());
+                            },
+                            () -> {
+                                // 流正常结束
+                                // 异步执行数据库写入
+                                CompletableFuture.runAsync(() -> {
+                                    //打包提问JSON
+                                    JSONObject ques = new JSONObject();
+                                    ques.put(Role.USER.getValue(), question);
+                                    //打包回答JSON
+                                    JSONObject ans = new JSONObject();
+                                    ans.put("thk", thkSb.toString());
+                                    ans.put("ans", ansSb.toString());
+                                    JSONObject answer = new JSONObject();
+                                    answer.put(Role.SYSTEM.getValue(), ans);
+                                    //保存数据库
+                                    messageList.add(ques);
+                                    messageList.add(answer);
+                                    diaPO.setContent(messageList.toString());
+                                    diaMapper.updateContent(diaPO.getId(), diaPO.getContent());
+                                }).thenRun(() -> {
+                                    try {
+                                        emitter.send(SseEmitter.event().data("END")); // 可选结束标记
+                                    } catch (IOException e) {
+                                        log.error(e.getMessage());
+                                    }
+                                    emitter.complete();
+                                }).exceptionally(e -> {
+                                    emitter.completeWithError(e);
+                                    return null;
+                                });
+                            }
+                    );
+
+
+            // 3. 绑定清理逻辑（客户端断开时取消订阅）
+            emitter.onCompletion(disposable::dispose);
+            emitter.onTimeout(disposable::dispose);
+
+        } catch (NoApiKeyException | InputRequiredException e) {
+            log.error(e.getMessage());
+        }
+        return emitter;
+    }
+
+    @Override
+    public SseEmitter streamAppQuestion(AgentPO agent, DiaPO diaPO, String question) {
+        // 1. 创建SseEmitter（超时设为3分钟）
+        SseEmitter emitter = new SseEmitter(180_000L);
+
+        // 2. 结果缓存
+        StringBuilder ansSb = new StringBuilder();
+        StringBuilder thkSb = new StringBuilder();
+
+        //确认api
+        assert agent != null;
+        assert agent.getApi() != null;
+        String api = agent.getApi();
+
+        assert !api.isEmpty();
+
+        //获取上下文
+        String str = diaPO.getContent();
+        List<JSONObject> messageList;
+        if (str == null || str.isEmpty()) {
+            messageList = new ArrayList<>();
+        } else {
+            messageList = JSON.parseArray(str, JSONObject.class);
+        }
+
+        //异步生成发送
+        try {
+            Disposable disposable = tongYiSource.streamAppCall(api, messageList, question)
+                    .subscribeOn(Schedulers.io())  // 在IO线程处理
+                    .subscribe(
+                            message -> {
+                                //解析think和ans
+                                String content=message.getOutput().getText();
+                                if (content != null && !content.isEmpty()) {
+                                    ansSb.append(content);
+                                    JSONObject answerObj = new JSONObject();
+                                    answerObj.put("type", "answer");
+                                    answerObj.put("data", content);
+                                    emitter.send(SseEmitter.event().data(answerObj.toString()));
+                                }
+                                //qwen系列模型没有的应用没有深度思考
+//                                String reason= message.getOutput().getThoughts().toString();
+//                                if ( reason!= null && !reason.isEmpty()) {
+//                                    thkSb.append(reason);
+//                                    JSONObject thinkObj = new JSONObject();
+//                                    thinkObj.put("type", "think");
+//                                    thinkObj.put("data", reason);
+//                                    emitter.send(SseEmitter.event().data(thinkObj.toString()));
+//                                }
                             },
                             error -> {
                                 // 错误处理
@@ -205,6 +318,44 @@ public class DiaServiceImpl implements DiaService {
             agent = agentMapper.selectById(diaPO.getAgentId());
         }
 
+        //获取上下文
+        String str = diaPO.getContent();
+        List<JSONObject> messageList;
+        if (str == null || str.isEmpty()) {
+            messageList = new ArrayList<>();
+        } else {
+            messageList = JSON.parseArray(str, JSONObject.class);
+        }
+
+        //识别model还是app处理
+        Map<String, String> result = null;
+        if (agent != null && agent.getApi() != null && !agent.getApi().isEmpty()) {
+            result = this.appQuestion(agent, diaPO, messageList, question);
+        } else {
+            result = this.modelQuestion(agent, diaPO, messageList, question);
+        }
+
+        //打包提问JSON
+        JSONObject ques = new JSONObject();
+        ques.put(Role.USER.getValue(), question);
+        //打包回答JSON
+        JSONObject ans = new JSONObject();
+        ans.put("thk", result.get("think"));
+        ans.put("ans", result.get("answer"));
+        JSONObject answer = new JSONObject();
+        answer.put(Role.SYSTEM.getValue(), ans);
+        //保存数据库
+        messageList.add(ques);
+        messageList.add(answer);
+        diaPO.setContent(messageList.toString());
+        diaMapper.updateContent(diaPO.getId(), diaPO.getContent());
+
+
+        return result;
+    }
+
+    @Override
+    public Map<String, String> modelQuestion(AgentPO agent, DiaPO diaPO, List<JSONObject> messageList, String question) {
         //确认模型
         String modelName = null;
         if (diaPO.getModel() == null) {
@@ -222,39 +373,32 @@ public class DiaServiceImpl implements DiaService {
             systemPrompt = agent.getPrompt();
         }
 
-        //获取上下文
-        String str = diaPO.getContent();
-        List<JSONObject> messageList;
-        if (str == null || str.isEmpty()) {
-            messageList = new ArrayList<>();
-        } else {
-            messageList = JSON.parseArray(str, JSONObject.class);
-        }
-
-        //生成
+        //执行请求
         Map<String, String> result = null;
         try {
             result = tongYiSource.call(modelName, systemPrompt, messageList, question);
-
-            //打包提问JSON
-            JSONObject ques = new JSONObject();
-            ques.put(Role.USER.getValue(), question);
-            //打包回答JSON
-            JSONObject ans = new JSONObject();
-            ans.put("thk", result.get("think"));
-            ans.put("ans", result.get("answer"));
-            JSONObject answer = new JSONObject();
-            answer.put(Role.SYSTEM.getValue(), ans);
-            //保存数据库
-            messageList.add(ques);
-            messageList.add(answer);
-            diaPO.setContent(messageList.toString());
-            diaMapper.updateContent(diaPO.getId(), diaPO.getContent());
-
         } catch (NoApiKeyException | InputRequiredException e) {
             log.error(e.getMessage());
         }
+        return result;
+    }
 
+
+    @Override
+    public Map<String, String> appQuestion(AgentPO agent, DiaPO diaPO, List<JSONObject> messageList, String question) {
+        //确认api
+        assert agent != null;
+        assert agent.getApi() != null;
+        String api = agent.getApi();
+        assert !api.isEmpty();
+
+        //执行请求
+        Map<String, String> result = null;
+        try {
+            result = tongYiSource.appCall(api, messageList, question);
+        } catch (NoApiKeyException | InputRequiredException e) {
+            log.error(e.getMessage());
+        }
         return result;
     }
 

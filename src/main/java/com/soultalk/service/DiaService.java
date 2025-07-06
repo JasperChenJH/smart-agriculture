@@ -1,5 +1,8 @@
 package com.soultalk.service;
 
+import com.alibaba.fastjson.JSONObject;
+import com.google.gson.JsonObject;
+import com.soultalk.po.AgentPO;
 import com.soultalk.po.DiaPO;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -19,11 +22,15 @@ public interface DiaService {
     //查找用户一定范围的对话详细
     List<DiaPO> getRangeDia(Long userId, Long start, Long end);
 
-    //流式请求
+    //流式请求+模型/应用的请求
     SseEmitter streamQuestion(Long diaId, String question);
+    SseEmitter streamModelQuestion(AgentPO agent, DiaPO diaPO, String question);
+    SseEmitter streamAppQuestion(AgentPO agent,DiaPO diaPO, String question);
 
     //非流式请求模型
-    Map<String,String> question(Long diaId, String question);
+    Map<String, String> question(Long diaId, String question);
+    Map<String,String> modelQuestion(AgentPO agent, DiaPO diaPO, List<JSONObject>messageList, String question);
+    Map<String,String> appQuestion(AgentPO agent, DiaPO diaPO, List<JSONObject>messageList, String question);
 
     //清空上下文
     void removeContent(Long userId, Long diaId) throws Exception;

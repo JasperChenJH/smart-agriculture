@@ -7,15 +7,15 @@
     </insert>
     <update id="update">
         update soultalk.agent
-        set name = #{name},
+        set name         = #{name},
             introduction = #{introduction},
-            creator = #{creator},
-            create_time = #{createTime},
-            pub = #{pub},
-            model = #{model},
-            prompt = #{prompt},
-            api = #{api},
-            photo = #{photo}
+            creator      = #{creator},
+            create_time  = #{createTime},
+            pub          = #{pub},
+            model        = #{model},
+            prompt       = #{prompt},
+            api          = #{api},
+            photo        = #{photo}
         where id = #{id}
     </update>
     <select id="countById" resultType="java.lang.Integer">

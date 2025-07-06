@@ -60,7 +60,7 @@ public class DialogueController {
 
     //非流式请求模型
     @PostMapping("/question")
-    public R question(@RequestParam("id") Long diaId, @RequestParam("question") String question){
+    public R question(@RequestParam("id") Long diaId, @RequestParam("question") String question) {
         return R.Success(diaService.question(diaId, question));
     }
 

@@ -3,42 +3,43 @@
 <mapper namespace="com.soultalk.mapper.DiaMapper">
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         insert into soultalk.dia(user_id, is_agent, agent_id, content, update_time)
-        values (#{userId},#{isAgent},#{agentId},#{content},#{updateTime})
+        values (#{userId}, #{isAgent}, #{agentId}, #{content}, #{updateTime})
     </insert>
     <update id="updateContent">
         update soultalk.dia
         set content=#{content}
-        where id=#{id}
+        where id = #{id}
     </update>
     <delete id="delete">
-        delete from soultalk.dia
-        where id=#{id}
+        delete
+        from soultalk.dia
+        where id = #{id}
     </delete>
     <update id="deleteContent">
         update soultalk.dia
         set content=null
-        where id= #{id}
+        where id = #{id}
     </update>
     <update id="updateLevel">
         update soultalk.dia
         set level= #{level}
-        where id= #{id}
+        where id = #{id}
     </update>
     <select id="selectRangeDia" resultType="com.soultalk.po.DiaPO">
         select *
         from soultalk.dia
-        where user_id=#{id}
+        where user_id = #{id}
         order by update_time desc
         limit #{start} , #{length}
     </select>
     <select id="countByUserId" resultType="java.lang.Long">
         select count(*)
         from soultalk.dia
-        where user_id=#{id}
+        where user_id = #{id}
     </select>
     <select id="selectDiaById" resultType="com.soultalk.po.DiaPO">
         select *
         from soultalk.dia
-        where id=#{id}
+        where id = #{id}
     </select>
 </mapper>

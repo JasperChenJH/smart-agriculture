@@ -6,7 +6,6 @@ import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.app.Application;
 import com.alibaba.dashscope.app.ApplicationParam;
 import com.alibaba.dashscope.app.ApplicationResult;
-import com.alibaba.dashscope.app.RagOptions;
 import com.alibaba.dashscope.common.Message;
 import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.ApiException;
@@ -16,18 +15,14 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.soultalk.config.Configs;
 import io.reactivex.Flowable;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 @Slf4j
@@ -39,44 +34,35 @@ public class TongYiSource implements AIGCSource {
         //临时存储
         StringBuilder thkSb = new StringBuilder();
         StringBuilder ansSb = new StringBuilder();
-        CountDownLatch latch = new CountDownLatch(1);  // 控制阻塞
 
-        try {
-            this.streamCall(modelName, systemPrompt, contentList, question)
-                    .subscribeOn(Schedulers.io())
-                    //阻塞处理
-                    .blockingSubscribe(
-                            message -> {
-                                //解析think和ans
-                                String content = message.getOutput().getChoices().get(0).getMessage().getContent();
-                                String reason = message.getOutput().getChoices().get(0).getMessage().getReasoningContent();
-                                if (content != null && !content.isEmpty()) {
-                                    ansSb.append(content);
-                                }
-                                if (reason != null && !reason.isEmpty()) {
-                                    thkSb.append(reason);
-                                }
-                            },
-                            throwable -> {
-                                log.error("error: {}", throwable.getMessage());
-                                latch.countDown();  // 出错也释放锁
-                            },
-                            () -> {
-                                latch.countDown();  // 完成时释放锁
+        //请求流式的api
+        this.streamCall(modelName, systemPrompt, contentList, question)
+                .subscribeOn(Schedulers.io())
+                //阻塞处理
+                .blockingSubscribe(
+                        message -> {
+                            //解析think和ans
+                            String content = message.getOutput().getChoices().get(0).getMessage().getContent();
+                            String reason = message.getOutput().getChoices().get(0).getMessage().getReasoningContent();
+                            if (content != null && !content.isEmpty()) {
+                                ansSb.append(content);
                             }
-                    );
+                            if (reason != null && !reason.isEmpty()) {
+                                thkSb.append(reason);
+                            }
+                        },
+                        throwable -> {
+                            log.error("error: {}", throwable.getMessage());
+                        },
+                        () -> {
+                        }
+                );
 
-            //等待锁
-            latch.await();
-
-            Map<String, String> result = new HashMap<>();
-            result.put("think", thkSb.toString());
-            result.put("answer", ansSb.toString());
-            return result;
-        } catch (InterruptedException e) {
-            log.error(e.getMessage());
-            return null;
-        }
+        //打包
+        Map<String, String> result = new HashMap<>();
+        result.put("think", thkSb.toString());
+        result.put("answer", ansSb.toString());
+        return result;
     }
 
     @Override
@@ -114,7 +100,6 @@ public class TongYiSource implements AIGCSource {
         }
 
         //调用API
-        //TODO: 分类调用model和app
         Generation gen = new Generation();
         GenerationParam param = GenerationParam.builder()
                 .apiKey(Configs.DASHSCOPE_API_KEY)
@@ -134,49 +119,39 @@ public class TongYiSource implements AIGCSource {
     }
 
     @Override
-    public Map<String, String> appCall(String appKey, List<JSONObject> contentList, String question)throws NoApiKeyException , InputRequiredException {
+    public Map<String, String> appCall(String appKey, List<JSONObject> contentList, String question) throws NoApiKeyException, InputRequiredException {
         //临时存储
         StringBuilder thkSb = new StringBuilder();
         StringBuilder ansSb = new StringBuilder();
-        CountDownLatch latch = new CountDownLatch(1);  // 控制阻塞
 
-        try {
-            this.streamAppCall(appKey, contentList, question)
-                    .subscribeOn(Schedulers.io())
-                    //阻塞处理
-                    .blockingSubscribe(
-                            message -> {
-                                //解析think和ans
-                                String content = message.getOutput().getText();
-                                String reason = message.getOutput().getThoughts().toString();
-                                if (content != null && !content.isEmpty()) {
-                                    ansSb.append(content);
-                                }
-                                if (reason != null && !reason.isEmpty()) {
-                                    thkSb.append(reason);
-                                }
-                            },
-                            throwable -> {
-                                log.error("error: {}", throwable.getMessage());
-                                latch.countDown();  // 出错也释放锁
-                            },
-                            () -> {
-                                latch.countDown();  // 完成时释放锁
+        //流式转非流式
+        this.streamAppCall(appKey, contentList, question)
+                .subscribeOn(Schedulers.io())
+                //阻塞处理
+                .blockingSubscribe(
+                        message -> {
+                            //解析think和ans
+                            String content = message.getOutput().getText();
+                            String reason = message.getOutput().getThoughts().toString();
+                            if (content != null && !content.isEmpty()) {
+                                ansSb.append(content);
                             }
-                    );
+                            if (reason != null && !reason.isEmpty()) {
+                                thkSb.append(reason);
+                            }
+                        },
+                        throwable -> {
+                            log.error("error: {}", throwable.getMessage());
+                        },
+                        () -> {
+                        }
+                );
 
-            //等待锁
-            latch.await();
-
-            Map<String, String> result = new HashMap<>();
-            result.put("think", thkSb.toString());
-            result.put("answer", ansSb.toString());
-            return result;
-
-        } catch (InterruptedException e) {
-            log.error(e.getMessage());
-            return null;
-        }
+        //打包结果
+        Map<String, String> result = new HashMap<>();
+        result.put("think", thkSb.toString());
+        result.put("answer", ansSb.toString());
+        return result;
     }
 
     @Override
@@ -212,6 +187,8 @@ public class TongYiSource implements AIGCSource {
                 .messages(messageList)
                 //问题
                 .prompt(question)
+                // 深度思考
+                .hasThoughts(true)
                 // 增量输出
                 .incrementalOutput(true)
                 // 替换为实际指定的知识库ID，逗号隔开多个
