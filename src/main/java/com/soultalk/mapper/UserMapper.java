@@ -19,5 +19,4 @@ public interface UserMapper {
 
     void update(UserPO user);
 
-    Page<UserEmotionRecordPO> getEmotionPageList(Long userId);
 }

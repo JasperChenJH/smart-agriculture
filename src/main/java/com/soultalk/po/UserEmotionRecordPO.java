@@ -35,6 +35,11 @@ public class UserEmotionRecordPO {
      * 用户的问题
      */
     private String context;
+
+    /**
+     * 状态：0-无效记录 1-有效记录 默认1
+     */
+    private int status;
     
     /**
      * 记录创建时间

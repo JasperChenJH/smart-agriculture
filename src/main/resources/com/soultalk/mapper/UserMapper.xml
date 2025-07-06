@@ -34,10 +34,5 @@
         from soultalk.user
         where id = #{id}
     </select>
-    <select id="getEmotionPageList" resultType="com.soultalk.po.UserEmotionRecordPO">
-        select *
-        from soultalk.user_emotion_records
-        where user_id = #{userId}
-        order by create_time desc
-    </select>
+
 </mapper>

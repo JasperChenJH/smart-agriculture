@@ -1,19 +1,25 @@
 package com.soultalk.service.impl;
 
 import com.soultalk.controller.request.JwtResponse;
+import com.soultalk.mapper.UserEmotionRecordMapper;
 import com.soultalk.mapper.UserInfoMapper;
 import com.soultalk.mapper.UserMapper;
+import com.soultalk.po.UserEmotionRecordPO;
 import com.soultalk.po.UserInfoPO;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.AuthService;
 import com.soultalk.utils.JwtUtils;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 @Slf4j
 @Service
@@ -24,6 +30,8 @@ public class AuthServiceImpl implements AuthService {
     private BCryptPasswordEncoder bCryptPasswordEncoder;
     @Autowired
     private UserInfoMapper userInfoMapper;
+    @Autowired
+    private UserEmotionRecordMapper userEmotionRecordMapper;
 
     @Override
     public ResponseEntity<?> login(String name, String password) {
@@ -59,6 +67,14 @@ public class AuthServiceImpl implements AuthService {
         UserInfoPO userInfo = new UserInfoPO();
         userInfo.setUserId(user.getId());
         userInfoMapper.insertDetailInfo(userInfo);
+
+        // 添加用户情感表
+        UserEmotionRecordPO userEmotionRecord = new UserEmotionRecordPO();
+        userEmotionRecord.setUserId(user.getId());
+        userEmotionRecord.setStatus(0);
+        userEmotionRecord.setEmotion("无效情绪");
+        userEmotionRecord.setScore(BigDecimal.valueOf(0.0f));
+        userEmotionRecordMapper.insert(userEmotionRecord);
         return ResponseEntity.ok("注册成功");
     }
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.soultalk.mapper.UserEmotionRecordMapper">
+    <insert id="insert">
+        insert into soultalk.user_emotion_records(user_id, emotion, score, context, status)
+        values (#{userId}, #{emotion}, #{score}, #{context}, #{status})
+    </insert>
+    <select id="getEmotionPageList" resultType="com.soultalk.po.UserEmotionRecordPO">
+        select *
+        from soultalk.user_emotion_records
+        where user_id = #{userId} and status = 1
+        order by create_time desc
+    </select>
+</mapper>

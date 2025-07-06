@@ -3,6 +3,7 @@ package com.soultalk.service.impl;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.soultalk.context.BaseContext;
+import com.soultalk.mapper.UserEmotionRecordMapper;
 import com.soultalk.mapper.UserInfoMapper;
 import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.PageResult;
@@ -28,6 +29,8 @@ public class UserServiceImpl implements UserService {
     private UserMapper userMapper;
     @Resource
     private UserInfoMapper userInfoMapper;
+    @Resource
+    private UserEmotionRecordMapper emotionRecordMapper;
 
     @Override
     public UserPO info(Long id) {
@@ -71,7 +74,7 @@ public class UserServiceImpl implements UserService {
     public PageResult getEmotionPageList(Integer page, Integer size) {
         Long userId = Long.valueOf(BaseContext.getCurrentId());
         PageHelper.startPage(page, size);
-        Page<UserEmotionRecordPO> list =  userMapper.getEmotionPageList(userId);
+        Page<UserEmotionRecordPO> list =  emotionRecordMapper.getEmotionPageList(userId);
         List<UserEmotionRecordPO> records = list.getResult();
         return new PageResult(list.getTotal(),records);
     }
