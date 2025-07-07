@@ -15,7 +15,9 @@ import com.soultalk.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
@@ -32,7 +34,8 @@ public class UserServiceImpl implements UserService {
     private UserInfoMapper userInfoMapper;
     @Resource
     private UserEmotionRecordMapper emotionRecordMapper;
-
+    @Resource
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
     @Override
     public UserPO info(Long id) {
         UserPO user = userMapper.selectById(id);
@@ -94,5 +97,38 @@ public class UserServiceImpl implements UserService {
         return list;
     }
 
+    @Transactional
+    @Override
+    public boolean updatePassword(String oldPassword, String newPassword) {
+        try {
+            Long userId = Long.valueOf(BaseContext.getCurrentId());
+            UserPO userPo = userMapper.selectById(userId);
+            if(bCryptPasswordEncoder.matches(oldPassword,userPo.getPassword())){
+                userPo.setPassword(bCryptPasswordEncoder.encode(newPassword));
+                userMapper.update(userPo);
+                return true;
+            }else {
+                return false;
+            }
+        }
+       catch (Exception e){
+            return false;
+        }
+    }
+
+    @Override
+    public void updateBaseInfo(String introduce, MultipartFile photo) {
+        Long userId = Long.valueOf(BaseContext.getCurrentId());
+        UserPO user = new UserPO();
+        user.setId(userId);
+        user.setIntroduce(introduce);
+        if (!photo.isEmpty()) {
+            String url = baseService.saveFileToOSS(photo.getOriginalFilename(), photo);
+            if (url != null) {
+                user.setPhoto(url);
+            }
+        }
+        userMapper.update(user);
+    }
 
 }

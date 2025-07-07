@@ -24,11 +24,6 @@ import java.util.List;
 public class UserController {
     @Autowired
     private UserService userService;
-    @Autowired
-    private AuthService authService;
-    @Autowired
-    private UserMapper userMapper;
-
     /**
      * 测试
      * @return
@@ -56,6 +51,7 @@ public class UserController {
      * @param photo
      * @return
      */
+    /*
     @PostMapping("/update")
     public R update(@RequestParam("name") String name,
                     @RequestParam("password") String password,
@@ -69,7 +65,34 @@ public class UserController {
             return R.Success("密码错误");
         }
     }
-
+    */
+    /**
+     *  修改用户基本信息
+     * @param introduce 自我简介
+     * @param photo 用户头像
+     * @return
+     */
+    @PostMapping("/updateBaseInfo")
+    public R updateBaseInfo(@RequestParam("introduce") String introduce,
+                            @RequestParam("photo") MultipartFile photo) {
+        userService.updateBaseInfo(introduce, photo);
+        return R.Success("修改成功");
+    }
+    /**
+     * 修改用户密码
+     * @param oldPassword 旧密码
+     * @param newPassword 新密码
+     * @return
+     */
+    @PostMapping("/updatePassword")
+    public R updatePassword(@RequestParam("oldpwd") String oldPassword,
+                            @RequestParam("newpwd") String newPassword) {
+        boolean flag = userService.updatePassword(oldPassword, newPassword);
+        if (!flag) {
+            return R.Failed("原始密码错误!");
+        }
+        return R.Success("修改成功!");
+    }
     /**
      * 获取用户详细信息
      * @return

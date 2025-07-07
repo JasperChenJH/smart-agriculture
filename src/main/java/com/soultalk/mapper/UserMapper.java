@@ -21,5 +21,4 @@ public interface UserMapper {
 
     void update(UserPO user);
 
-
 }

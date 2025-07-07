@@ -14,4 +14,5 @@ public interface AuthService {
 
     //重设密码，传空则重置为 a12345
     void resetPassword(Long userId, String newPassword);
+
 }

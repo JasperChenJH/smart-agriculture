@@ -7,11 +7,17 @@
     </insert>
     <update id="update">
         update soultalk.user
-        set name=#{name},
-            password=#{password},
-            time=#{time},
-            introduce=#{introduce},
-            photo=#{photo}
+        <set>
+            <if test="password != null">
+                password = #{password},
+            </if>
+            <if test="introduce != null">
+                introduce = #{introduce},
+            </if>
+            <if test="photo != null">
+                photo = #{photo},
+            </if>
+        </set>
         where id = #{id}
     </update>
     <select id="selectByName" resultType="com.soultalk.po.UserPO">
