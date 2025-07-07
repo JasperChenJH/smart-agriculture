@@ -12,5 +12,5 @@ public class Configs {
     public static final String OSS_REGION = "cn-chengdu";// 填写Bucket所在地域
 
     //通义API Key
-    public static String DASHSCOPE_API_KEY = "sk-92fd86adfa824da1b25be1b5654d1fca";
+    public static final String DASHSCOPE_API_KEY = "sk-92fd86adfa824da1b25be1b5654d1fca";
 }

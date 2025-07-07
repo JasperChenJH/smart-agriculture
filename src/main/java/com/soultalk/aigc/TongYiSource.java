@@ -143,9 +143,7 @@ public class TongYiSource implements AIGCSource {
                                 thkSb.append(reason);
                             }
                         },
-                        throwable -> {
-                            log.error("error: {}", throwable.getMessage());
-                        },
+                        throwable -> log.error("error: {}", throwable.getMessage()),
                         () -> {
                         }
                 );

@@ -2,12 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.soultalk.mapper.DiaMapper">
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        insert into soultalk.dia(user_id, is_agent, agent_id, content, update_time)
-        values (#{userId}, #{isAgent}, #{agentId}, #{content}, #{updateTime})
+        insert into soultalk.dia(user_id, is_agent, agent_id, level, content, update_time)
+        values (#{userId}, #{isAgent}, #{agentId}, #{level}, #{content}, #{updateTime})
     </insert>
     <update id="updateContent">
         update soultalk.dia
-        set content=#{content}
+        set content=#{content}.
+            update_time=CURRENT_TIMESTAMP
         where id = #{id}
     </update>
     <delete id="delete">
@@ -22,7 +23,8 @@
     </update>
     <update id="updateLevel">
         update soultalk.dia
-        set level= #{level}
+        set level= #{level},
+            update_time=CURRENT_TIMESTAMP
         where id = #{id}
     </update>
     <select id="selectRangeDia" resultType="com.soultalk.po.DiaPO">

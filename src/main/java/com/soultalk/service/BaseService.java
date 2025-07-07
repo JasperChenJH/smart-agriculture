@@ -4,4 +4,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface BaseService {
     String saveFileToOSS(String fileName, MultipartFile file);
+
+    void removeFileFromOSS(String url);
 }

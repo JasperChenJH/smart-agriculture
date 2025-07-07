@@ -26,6 +26,7 @@ public class UserController {
     private UserService userService;
     /**
      * 测试
+     *
      * @return
      */
     @PostMapping("/hello")
@@ -33,8 +34,10 @@ public class UserController {
         System.out.println(BaseContext.getCurrentId());
         return ResponseEntity.ok("hello");
     }
+
     /**
      * 获取用户基本信息
+     *
      * @return
      */
     @GetMapping("/info")
@@ -45,6 +48,7 @@ public class UserController {
 
     /**
      * 修改用户基本信息
+     *
      * @param name
      * @param password
      * @param introduce
@@ -95,27 +99,30 @@ public class UserController {
     }
     /**
      * 获取用户详细信息
+     *
      * @return
      */
     @GetMapping("/detail/info")
-    public R getDetailInfo(){
+    public R getDetailInfo() {
         UserInfoPO userInfo = userService.getDetailInfo();
         return R.Success(userInfo);
     }
 
     /**
      * 修改用户详细信息
+     *
      * @param userInfo
      * @return
      */
     @PostMapping("/detail/update")
-    public R updateDetailInfo(@RequestBody UserInfoPO userInfo){
+    public R updateDetailInfo(@RequestBody UserInfoPO userInfo) {
         userService.updateDetailInfo(userInfo);
         return R.Success("修改成功");
     }
 
     /**
      * 用户情感得分列表
+     *
      * @param page
      * @param size
      * @return
@@ -129,6 +136,7 @@ public class UserController {
 
     /**
      * 删除用户情感得分记录
+     *
      * @param ids 情感id集合
      */
     @DeleteMapping("/emotion/delete")
@@ -139,13 +147,14 @@ public class UserController {
 
     /**
      * 绘制情感得分图
+     *
      * @param items 记录条数 默认20条
      * @param days  最近多少天 默认3天
      * @return 情感得分集合
      */
     @GetMapping("/emotion/chart")
-    public R getEmotionChart(@RequestParam(value = "items",defaultValue = "20") Integer items,
-                             @RequestParam(value = "days",defaultValue = "3") Integer days) {
+    public R getEmotionChart(@RequestParam(value = "items", defaultValue = "20") Integer items,
+                             @RequestParam(value = "days", defaultValue = "3") Integer days) {
         List<UserEmotionRecordPO> result = userService.getEmotionChart(items, days);
         return R.Success(result);
     }
