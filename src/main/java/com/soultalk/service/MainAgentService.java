@@ -3,21 +3,22 @@ package com.soultalk.service;
 import com.soultalk.po.MainDiaPO;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.util.List;
 import java.util.Map;
 
 public interface MainAgentService {
-    //创建对应智能体的对话，空agentId则为纯对话,返回id
-    Long createDia(Long userId);
+    //创建第一个问候对话,返回id
+    Long initDia(Long userId);
 
     //获取某个用户的对话
-    MainDiaPO getDiaById(Long id);
+    List<MainDiaPO> get(Long userId);
 
     //流式请求应用
-    SseEmitter streamQuestion(Long userId, String question);
+    SseEmitter streamAsk(Long userId, String question);
 
     //非流式请求模型
-    Map<String, String> question(Long userId, String question);
+    Map<String, String> ask(Long userId, String question);
 
     //清空上下文
-    void removeContent(Long userId, Long diaId) throws Exception;
+    void removeContent(Long userId) throws Exception;
 }

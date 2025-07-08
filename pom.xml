@@ -97,6 +97,12 @@
 			<artifactId>dashscope-sdk-java</artifactId>
 			<version>2.20.6</version>
 		</dependency>
+<!--		阿里百炼SDK-->
+		<dependency>
+			<groupId>com.aliyun</groupId>
+			<artifactId>alibabacloud-bailian20231229</artifactId>
+			<version>2.0.8</version>
+		</dependency>
 <!--		分页查询插件-->
 		<dependency>
 			<groupId>com.github.pagehelper</groupId>

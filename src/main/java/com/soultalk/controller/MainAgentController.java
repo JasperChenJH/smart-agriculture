@@ -1,15 +1,18 @@
 package com.soultalk.controller;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.google.gson.JsonArray;
 import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.service.MainAgentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -25,7 +28,7 @@ public class MainAgentController {
     public R create() {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
         try {
-            Long diaId = mainAgentService.createDia(userId);
+            Long diaId = mainAgentService.initDia(userId);
             assert diaId != null;
 
             return R.Success(diaId + " 已创建");
@@ -43,7 +46,7 @@ public class MainAgentController {
     @GetMapping("/get")
     public R get() {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
-        return null;
+        return R.Success(mainAgentService.get(userId));
     }
 
     /**
@@ -52,8 +55,45 @@ public class MainAgentController {
      * @return
      */
     @PostMapping("/ask")
-    public SseEmitter ask() {
-        return null;
+    public SseEmitter ask(@RequestParam("question") String question, @RequestParam(value = "stream", required = false) int stream) {
+        Long userId = Long.parseLong(BaseContext.getCurrentId());
+
+        //是否流式输出
+        if (stream == 1) {
+            return mainAgentService.streamAsk(userId, question);
+        } else {
+            Map<String, String> result = mainAgentService.ask(userId, question);
+            //新建sse
+            SseEmitter emitter = new SseEmitter(60_000L);
+
+            try {
+                //导入数据
+                JSONObject json1 = new JSONObject();
+                json1.put("type", "answer");
+                json1.put("data", result.get("answer"));
+                emitter.send(SseEmitter.event()
+                        .data(json1)
+                        .reconnectTime(5_000L)//重试时间
+                );
+                JSONObject json2 = new JSONObject();
+                json2.put("type", "think");
+                json2.put("data", result.get("think"));
+                emitter.send(SseEmitter.event()
+                        .data(json2)
+                        .reconnectTime(5_000L)//重试时间
+                );
+
+                //结束sse
+                emitter.send(SseEmitter.event().data("END")); // 可选结束标记
+                emitter.complete();
+
+            } catch (IOException e) {
+                log.error(e.getMessage());
+                emitter.completeWithError(e);
+            }
+
+            return emitter;
+        }
     }
 
     /**
@@ -63,6 +103,13 @@ public class MainAgentController {
      */
     @GetMapping("/clear")
     public R clear() {
-        return R.Success();
+        try {
+            Long userId = Long.parseLong(BaseContext.getCurrentId());
+            mainAgentService.removeContent(userId);
+            return R.Success("清除成功");
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return R.Success(e);
+        }
     }
 }

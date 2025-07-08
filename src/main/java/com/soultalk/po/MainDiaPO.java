@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class MainDiaPO {
     private Long id;
     private Long userId;
-    private String content;
+    private Boolean isUser;
+    private String sentence;
     private Long time;
 }

@@ -2,7 +2,29 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.soultalk.mapper.MainDiaMapper">
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        insert into soultalk.dia_main(user_id, content, time)
-        values (#{userId}, #{content}, CURRENT_TIMESTAMP)
+        insert into soultalk.dia_main(user_id, is_user, sentence, time)
+        values (#{userId}, #{isUser}, #{sentence}, #{time})
     </insert>
+    <delete id="removeAllByUserId">
+        delete
+        from soultalk.dia_main
+        where user_id=#{userId}
+    </delete>
+    <delete id="removeByIndex">
+        delete
+        from soultalk.dia_main
+        where user_id = #{userId}
+        order by time desc
+        limit #{index},1
+    </delete>
+    <select id="selectByUserId" resultType="com.soultalk.po.MainDiaPO">
+        select *
+        from soultalk.dia_main
+        where user_id = #{userId}
+    </select>
+    <select id="countByUserId" resultType="java.lang.Integer">
+        select count(*)
+        from soultalk.dia_main
+        where user_id = #{userId}
+    </select>
 </mapper>

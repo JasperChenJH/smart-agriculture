@@ -1,0 +1,233 @@
+package com.soultalk.aigc;
+
+import com.alibaba.dashscope.app.Application;
+import com.alibaba.dashscope.app.ApplicationParam;
+import com.alibaba.dashscope.app.ApplicationResult;
+import com.alibaba.dashscope.common.Message;
+import com.alibaba.dashscope.exception.InputRequiredException;
+import com.alibaba.dashscope.exception.NoApiKeyException;
+import com.alibaba.fastjson.JSONObject;
+import com.aliyun.auth.credentials.Credential;
+import com.aliyun.auth.credentials.provider.StaticCredentialProvider;
+import com.aliyun.sdk.service.bailian20231229.AsyncClient;
+import com.aliyun.sdk.service.bailian20231229.models.*;
+import com.soultalk.config.Configs;
+import darabonba.core.client.ClientOverrideConfiguration;
+import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+@Component
+@Slf4j
+public class MainAgentSourceImpl implements MainAgentSource {
+
+    @Override
+    public Flowable<ApplicationResult> streamAppCall(String appKey, String memoryId, List<Map<String, String>> conntentList, String question) throws NoApiKeyException, InputRequiredException {
+        List<Message> messageList = new ArrayList<>();
+
+        //整理历史对话
+        for (Map<String, String> map : conntentList) {
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                //构建单个语句
+                Message mess = Message.builder()
+                        .role(entry.getKey())
+                        .content(entry.getValue())
+                        .build();
+
+                if (mess != null && !mess.getContent().isEmpty()) {
+                    messageList.add(mess);
+                }
+            }
+        }
+
+        //调用API
+        ApplicationParam param = ApplicationParam.builder()
+                .apiKey(Configs.DASHSCOPE_API_KEY)
+                //api id
+                .appId(appKey)
+                //本次问题
+                .prompt(question)
+                //历史对话
+                .messages(messageList)
+                // 长期记忆id
+                .memoryId(memoryId)
+                // 增量输出
+                .incrementalOutput(true)
+                // 替换为实际指定的知识库ID，逗号隔开多个
+//                .ragOptions(RagOptions.builder()
+//                        // 替换为实际指定的知识库ID，逗号隔开多个
+//                        .pipelineIds(List.of("PIPELINES_ID1", "PIPELINES_ID2"))
+//                        .build())
+                .build();
+
+        Application application = new Application();
+        return application.streamCall(param);
+    }
+
+    @Override
+    public Map<String, String> appCall(String appKey, String memoryId, List<Map<String, String>> conntentList, String question) throws NoApiKeyException, InputRequiredException {
+        //临时存储
+        StringBuilder thkSb = new StringBuilder();
+        StringBuilder ansSb = new StringBuilder();
+
+        //流式转非流式
+        this.streamAppCall(appKey, memoryId, conntentList, question)
+                .subscribeOn(Schedulers.io())
+                //阻塞处理
+                .blockingSubscribe(
+                        message -> {
+                            //解析think和ans
+                            String content = message.getOutput().getText();
+                            String reason = message.getOutput().getThoughts().toString();
+                            if (content != null && !content.isEmpty()) {
+                                ansSb.append(content);
+                            }
+                            if (reason != null && !reason.isEmpty()) {
+                                thkSb.append(reason);
+                            }
+                        },
+                        throwable -> log.error("error: {}", throwable.getMessage()),
+                        () -> {
+                        }
+                );
+
+        //打包结果
+        Map<String, String> result = new HashMap<>();
+        result.put("think", thkSb.toString());
+        result.put("answer", ansSb.toString());
+        return result;
+    }
+
+    @Override
+    public String createMemoryId(String workspaceId, String description) throws Exception {
+        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
+                //OSS的密钥通用
+                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
+                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
+                .build());
+
+        AsyncClient client = AsyncClient.builder()
+                .region("cn-beijing") // Region ID
+                .credentialsProvider(provider)
+                .overrideConfiguration(
+                        ClientOverrideConfiguration.create()
+                                // Endpoint 请参考 https://api.aliyun.com/product/bailian
+                                .setEndpointOverride("bailian.cn-beijing.aliyuncs.com")
+                        //.setConnectTimeout(Duration.ofSeconds(30))
+                )
+                .build();
+
+        CreateMemoryRequest createMemoryRequest = CreateMemoryRequest.builder()
+                .workspaceId(workspaceId)
+                .description(description)
+                .build();
+
+        CompletableFuture<CreateMemoryResponse> response = client.createMemory(createMemoryRequest);
+        CreateMemoryResponse resp = response.get();
+        client.close();
+
+        return resp.getBody().getMemoryId();
+    }
+
+    @Override
+    public void removeMemory(String workspaceId, String memoryId) throws Exception {
+        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
+                //OSS的密钥通用
+                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
+                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
+                .build());
+
+        AsyncClient client = AsyncClient.builder()
+                .region("cn-beijing") // Region ID
+                .credentialsProvider(provider)
+                .overrideConfiguration(
+                        ClientOverrideConfiguration.create()
+                                // Endpoint 请参考 https://api.aliyun.com/product/bailian
+                                .setEndpointOverride("bailian.cn-beijing.aliyuncs.com")
+                        //.setConnectTimeout(Duration.ofSeconds(30))
+                )
+                .build();
+
+        DeleteMemoryRequest deleteMemoryRequest = DeleteMemoryRequest.builder()
+                .workspaceId(workspaceId)
+                .memoryId(memoryId)
+                .build();
+
+        CompletableFuture<DeleteMemoryResponse> response = client.deleteMemory(deleteMemoryRequest);
+        DeleteMemoryResponse resp = response.get();
+        client.close();
+    }
+
+    @Override
+    public List<Map<String, String>> listMemory(String workspaceId, Integer depart, String[] nextToken) throws Exception {
+        assert nextToken != null && nextToken.length == 1;
+
+        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
+                //OSS的密钥通用
+                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
+                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
+                .build());
+
+        AsyncClient client = AsyncClient.builder()
+                .region("cn-beijing") // Region ID
+                .credentialsProvider(provider)
+                .overrideConfiguration(
+                        ClientOverrideConfiguration.create()
+                                // Endpoint 请参考 https://api.aliyun.com/product/bailian
+                                .setEndpointOverride("bailian.cn-beijing.aliyuncs.com")
+                        //.setConnectTimeout(Duration.ofSeconds(30))
+                )
+                .build();
+
+        ListMemoriesRequest listMemoriesRequest = ListMemoriesRequest.builder()
+                .workspaceId(workspaceId)
+                .maxResults(depart)
+                .nextToken(nextToken[0])
+                .build();
+
+        CompletableFuture<ListMemoriesResponse> response = client.listMemories(listMemoriesRequest);
+        ListMemoriesResponse resp = response.get();
+        client.close();
+
+        Map<String, Object> map = resp.getBody().toMap();
+        nextToken[0] = (String) map.getOrDefault("nextToken", "");
+        return (List<Map<String, String>>) map.get("memories");
+    }
+
+    @Override
+    public void updateMemoryDescription(String workspaceId, String memoryId, String description) throws Exception {
+        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
+                //OSS的密钥通用
+                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
+                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
+                .build());
+
+        AsyncClient client = AsyncClient.builder()
+                .region("cn-beijing") // Region ID
+                .credentialsProvider(provider)
+                .overrideConfiguration(
+                        ClientOverrideConfiguration.create()
+                                // Endpoint 请参考 https://api.aliyun.com/product/bailian
+                                .setEndpointOverride("bailian.cn-beijing.aliyuncs.com")
+                        //.setConnectTimeout(Duration.ofSeconds(30))
+                )
+                .build();
+
+        UpdateMemoryRequest updateMemoryRequest = UpdateMemoryRequest.builder()
+                .workspaceId(workspaceId)
+                .memoryId(memoryId)
+                .description(description)
+                .build();
+
+        CompletableFuture<UpdateMemoryResponse> response = client.updateMemory(updateMemoryRequest);
+        UpdateMemoryResponse resp = response.get();
+        client.close();
+    }
+}
