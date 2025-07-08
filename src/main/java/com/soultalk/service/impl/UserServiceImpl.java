@@ -3,6 +3,7 @@ package com.soultalk.service.impl;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.soultalk.context.BaseContext;
+import com.soultalk.mapper.DiaMapper;
 import com.soultalk.mapper.UserEmotionRecordMapper;
 import com.soultalk.mapper.UserInfoMapper;
 import com.soultalk.mapper.UserMapper;
@@ -36,6 +37,8 @@ public class UserServiceImpl implements UserService {
     private UserEmotionRecordMapper emotionRecordMapper;
     @Resource
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+    @Resource
+    private DiaMapper diaMapper;
     @Override
     public UserPO info(Long id) {
         UserPO user = userMapper.selectById(id);
@@ -129,6 +132,16 @@ public class UserServiceImpl implements UserService {
             }
         }
         userMapper.update(user);
+    }
+    @Transactional
+    @Override
+    public void dropUser(){
+        Long userId = Long.valueOf(BaseContext.getCurrentId());
+        emotionRecordMapper.deleteAllByUserId(userId);
+        userInfoMapper.deleteByUserId(userId);
+        diaMapper.deleteByUserId(userId);
+        // TODO: 删除dia_main表中数据
+        userMapper.deleteById(userId);
     }
 
 }

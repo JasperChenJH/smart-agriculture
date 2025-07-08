@@ -97,6 +97,16 @@ public class UserController {
         }
         return R.Success("修改成功!");
     }
+
+    /**
+     * 注销账号
+     * @return
+     */
+    @GetMapping("/drop")
+    public R drop() {
+        userService.dropUser();
+        return R.Success("删除成功");
+    }
     /**
      * 获取用户详细信息
      *
@@ -123,13 +133,13 @@ public class UserController {
     /**
      * 用户情感得分列表
      *
-     * @param page
-     * @param size
-     * @return
+     * @param page 页码 默认1
+     * @param size 每页数量 默认10
+     * @return 用户情感得分列表
      */
 
     @GetMapping("/emotion/pagelist")
-    public R getEmotionPageList(@RequestParam("page") Integer page, @RequestParam("size") Integer size) {
+    public R getEmotionPageList(@RequestParam(value = "page",defaultValue = "1") Integer page, @RequestParam(value = "size",defaultValue = "10") Integer size) {
         PageResult pageResult = userService.getEmotionPageList(page, size);
         return R.Success(pageResult);
     }

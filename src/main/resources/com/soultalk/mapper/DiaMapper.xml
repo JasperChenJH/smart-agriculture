@@ -16,6 +16,11 @@
         from soultalk.dia
         where id = #{id}
     </delete>
+    <delete id="deleteByUserId">
+        delete
+        from soultalk.dia
+        where user_id = #{id}
+    </delete>
     <update id="deleteContent">
         update soultalk.dia
         set content=null

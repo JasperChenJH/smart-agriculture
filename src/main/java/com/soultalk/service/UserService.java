@@ -35,4 +35,7 @@ public interface UserService {
 
     // 更新用户基本信息
     void updateBaseInfo(String introduce, MultipartFile photo);
+
+    // 注销账户
+    void dropUser();
 }

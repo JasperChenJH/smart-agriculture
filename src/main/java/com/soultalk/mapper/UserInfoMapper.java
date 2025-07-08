@@ -12,4 +12,5 @@ public interface UserInfoMapper {
 
     void insertDetailInfo(UserInfoPO userInfo);
 
+    void deleteByUserId(Long userId);
 }

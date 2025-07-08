@@ -17,4 +17,6 @@ public interface UserEmotionRecordMapper {
     List<UserEmotionRecordPO> getEmotionChatList(Long userId, Integer items, LocalDateTime startTime, LocalDateTime endTime);
 
     void deleteBatch(List<Long> ids);
+
+    void deleteAllByUserId(Long userId);
 }

@@ -1,6 +1,7 @@
 package com.soultalk.mapper;
 
 import com.soultalk.po.UserPO;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
@@ -17,4 +18,6 @@ public interface UserMapper {
 
     void update(UserPO user);
 
+    @Delete("delete from user where id=#{id}")
+    void deleteById(Long id);
 }

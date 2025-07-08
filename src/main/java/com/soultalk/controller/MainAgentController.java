@@ -43,7 +43,7 @@ public class MainAgentController {
     @GetMapping("/get")
     public R get() {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
-
+        return null;
     }
 
     /**

@@ -19,6 +19,10 @@
             city = #{city}
         where user_id = #{userId}
     </update>
+    <delete id="deleteByUserId">
+        delete from soultalk.user_info
+        where user_id = #{userId}
+    </delete>
     <select id="getDetailInfoByUserId" resultType="com.soultalk.po.UserInfoPO">
         select *
         from soultalk.user_info

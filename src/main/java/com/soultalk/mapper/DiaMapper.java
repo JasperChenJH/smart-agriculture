@@ -23,4 +23,6 @@ public interface DiaMapper {
     void deleteContent(Long id);
 
     void delete(Long id);
+
+    void deleteByUserId(Long userId);
 }

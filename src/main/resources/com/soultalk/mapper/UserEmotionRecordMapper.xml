@@ -25,4 +25,8 @@
             #{id}
         </foreach>
     </delete>
+    <delete id="deleteAllByUserId">
+        delete from soultalk.user_emotion_records
+        where user_id = #{userId}
+    </delete>
 </mapper>
