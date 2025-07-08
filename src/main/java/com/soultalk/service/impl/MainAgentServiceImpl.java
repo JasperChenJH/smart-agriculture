@@ -4,24 +4,19 @@ import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson2.JSON;
-import com.soultalk.aigc.AIGCSource;
-import com.soultalk.aigc.MainAgentSource;
-import com.soultalk.aigc.MainAgentSourceImpl;
+import com.soultalk.aigc.MainAgent;
 import com.soultalk.config.Configs;
 import com.soultalk.mapper.MainDiaMapper;
-import com.soultalk.po.AgentPO;
-import com.soultalk.po.DiaPO;
+import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.MainDiaPO;
+import com.soultalk.po.UserPO;
 import com.soultalk.service.MainAgentService;
-import com.sun.tools.javac.Main;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -35,9 +30,11 @@ import java.util.concurrent.CompletableFuture;
 @Service
 public class MainAgentServiceImpl implements MainAgentService {
     @Resource
-    private MainAgentSource agentSource;
+    private MainAgent agentSource;
     @Autowired
     private MainDiaMapper mainDiaMapper;
+    @Autowired
+    private UserMapper userMapper;
 
     @Override
     public Long initDia(Long userId) {
@@ -62,15 +59,27 @@ public class MainAgentServiceImpl implements MainAgentService {
         String api = Configs.MAIN_MODEL_API;
 
         //获取长期记忆ID
-        //TODO: 获取ID
         String memoryId = null;
+        UserPO userPO = userMapper.selectById(userId);
+        if (userPO.getMemoryId() == null) {
+            try {
+                memoryId = agentSource.createMemoryId(Configs.ALI_WORKSPACE_ID, "");
+                userMapper.setMemoryIdToId(userId, memoryId);
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+        }else {
+            memoryId = userPO.getMemoryId();
+        }
+        assert memoryId != null;
+
 
         //处理上下文
         List<MainDiaPO> list = mainDiaMapper.selectByUserId(userId);
 
         List<Map<String, String>> messageList = new ArrayList<>();
         for (MainDiaPO dia : list) {
-            if (dia.getIsUser() != null && dia.getSentence() != null && !dia.getSentence().isEmpty()) {
+            if (dia.getIsUser() && dia.getSentence() != null && !dia.getSentence().isEmpty()) {
                 Map<String, String> m = new HashMap<>(1);
                 if (dia.getIsUser()) {
                     m.put(Role.USER.getValue(), dia.getSentence());
@@ -122,7 +131,7 @@ public class MainAgentServiceImpl implements MainAgentService {
                                     diaPO.setUserId(userId);
                                     diaPO.setIsUser(false);
                                     diaPO.setSentence(ansSb.toString());
-                                    diaPO.setTime(System.currentTimeMillis()+1);
+                                    diaPO.setTime(System.currentTimeMillis() + 1);
                                     mainDiaMapper.insert(diaPO);
                                 }).thenRun(() -> {
                                     try {
@@ -155,15 +164,26 @@ public class MainAgentServiceImpl implements MainAgentService {
         String api = Configs.MAIN_MODEL_API;
 
         //获取长期记忆ID
-        //TODO: 获取ID
         String memoryId = null;
+        UserPO userPO = userMapper.selectById(userId);
+        if (userPO.getMemoryId() == null) {
+            try {
+                memoryId = agentSource.createMemoryId(Configs.ALI_WORKSPACE_ID, "");
+                userMapper.setMemoryIdToId(userId, memoryId);
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+        }else{
+            memoryId = userPO.getMemoryId();
+        }
+        assert memoryId != null;
 
         //处理上下文
         List<MainDiaPO> list = mainDiaMapper.selectByUserId(userId);
 
         List<Map<String, String>> messageList = new ArrayList<>();
         for (MainDiaPO dia : list) {
-            if (dia.getIsUser() != null && dia.getSentence() != null && !dia.getSentence().isEmpty()) {
+            if (dia.getIsUser() && dia.getSentence() != null && !dia.getSentence().isEmpty()) {
                 Map<String, String> m = new HashMap<>(1);
                 if (dia.getIsUser()) {
                     m.put(Role.USER.getValue(), dia.getSentence());
@@ -173,10 +193,11 @@ public class MainAgentServiceImpl implements MainAgentService {
                 messageList.add(m);
             }
         }
+
         //执行请求
         Map<String, String> result = null;
         try {
-            result = agentSource.appCall(api,memoryId, messageList, question);
+            result = agentSource.appCall(api, memoryId, messageList, question);
         } catch (NoApiKeyException | InputRequiredException e) {
             log.error(e.getMessage());
             return result;

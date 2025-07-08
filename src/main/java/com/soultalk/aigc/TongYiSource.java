@@ -4,6 +4,7 @@ import com.alibaba.dashscope.aigc.generation.Generation;
 import com.alibaba.dashscope.aigc.generation.GenerationParam;
 import com.alibaba.dashscope.aigc.generation.GenerationResult;
 import com.alibaba.dashscope.app.Application;
+import com.alibaba.dashscope.app.ApplicationOutput;
 import com.alibaba.dashscope.app.ApplicationParam;
 import com.alibaba.dashscope.app.ApplicationResult;
 import com.alibaba.dashscope.common.Message;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Component
@@ -33,6 +35,9 @@ public class TongYiSource implements AIGCSource {
         //临时存储
         StringBuilder thkSb = new StringBuilder();
         StringBuilder ansSb = new StringBuilder();
+
+        // 添加流处理完成标记
+        AtomicBoolean completed = new AtomicBoolean(false);
 
         //请求流式的api
         this.streamCall(modelName, systemPrompt, contentList, question)
@@ -52,10 +57,17 @@ public class TongYiSource implements AIGCSource {
                         },
                         throwable -> {
                             log.error("error: {}", throwable.getMessage());
+                            completed.set(true);
                         },
                         () -> {
+                            completed.set(true);
                         }
                 );
+
+        //阻塞等待
+        while (!completed.get()) {
+            Thread.yield();
+        }
 
         //打包
         Map<String, String> result = new HashMap<>();
@@ -127,6 +139,9 @@ public class TongYiSource implements AIGCSource {
         StringBuilder thkSb = new StringBuilder();
         StringBuilder ansSb = new StringBuilder();
 
+        // 添加流处理完成标记
+        AtomicBoolean completed = new AtomicBoolean(false);
+
         //流式转非流式
         this.streamAppCall(appKey, contentList, question)
                 .subscribeOn(Schedulers.io())
@@ -135,18 +150,27 @@ public class TongYiSource implements AIGCSource {
                         message -> {
                             //解析think和ans
                             String content = message.getOutput().getText();
-                            String reason = message.getOutput().getThoughts().toString();
                             if (content != null && !content.isEmpty()) {
                                 ansSb.append(content);
                             }
-                            if (reason != null && !reason.isEmpty()) {
-                                thkSb.append(reason);
+                            List<ApplicationOutput.Thought> thoughtList = message.getOutput().getThoughts();
+                            if (thoughtList != null && thoughtList.size() == 1 && thoughtList.get(0) != null && thoughtList.get(0).getThought() != null) {
+                                thkSb.append(thoughtList.get(0).getThought());
                             }
                         },
-                        throwable -> log.error("error: {}", throwable.getMessage()),
+                        throwable -> {
+                            log.error("error: {}", throwable.getMessage());
+                            completed.set(true);
+                        },
                         () -> {
+                            completed.set(true);
                         }
                 );
+
+        //阻塞等待
+        while (!completed.get()){
+            Thread.yield();
+        }
 
         //打包结果
         Map<String, String> result = new HashMap<>();

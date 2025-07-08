@@ -15,4 +15,5 @@ public class UserPO {
     private Long time;
     private String introduce;
     private String photo;
+    private String memoryId;
 }

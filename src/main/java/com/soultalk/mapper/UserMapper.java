@@ -14,10 +14,11 @@ public interface UserMapper {
 
     Integer countByName(String name);
 
+    void setMemoryIdToId(Long id, String memoryId);
+
     void insert(UserPO user);
 
     void update(UserPO user);
 
-    @Delete("delete from user where id=#{id}")
     void deleteById(Long id);
 }

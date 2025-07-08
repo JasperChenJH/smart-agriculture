@@ -18,6 +18,6 @@ public class Configs {
     public static final String DASHSCOPE_API_KEY = "sk-92fd86adfa824da1b25be1b5654d1fca";
 
     //主模型API
-    public static final String MAIN_MODEL_API = "9d08c329854d4134aec91b212ef0c65c";
+    public static final String MAIN_MODEL_API = "f304bf9d8d5741cba89bf9145c377657";
 
 }

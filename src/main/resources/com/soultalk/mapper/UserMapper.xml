@@ -20,6 +20,16 @@
         </set>
         where id = #{id}
     </update>
+    <update id="setMemoryIdToId">
+        update soultalk.user
+        set memory_id = #{memoryId}
+        where id = #{id}
+    </update>
+    <delete id="deleteById">
+        delete
+        from user
+        where id = #{id}
+    </delete>
     <select id="selectByName" resultType="com.soultalk.po.UserPO">
         select *
         from soultalk.user

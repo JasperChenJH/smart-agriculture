@@ -64,7 +64,7 @@ public class MainAgentController {
         } else {
             Map<String, String> result = mainAgentService.ask(userId, question);
             //新建sse
-            SseEmitter emitter = new SseEmitter(60_000L);
+            SseEmitter emitter = new SseEmitter(120_000L);
 
             try {
                 //导入数据

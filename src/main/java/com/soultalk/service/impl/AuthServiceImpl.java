@@ -1,5 +1,7 @@
 package com.soultalk.service.impl;
 
+import com.soultalk.aigc.MainAgent;
+import com.soultalk.config.Configs;
 import com.soultalk.controller.request.JwtResponse;
 import com.soultalk.mapper.UserEmotionRecordMapper;
 import com.soultalk.mapper.UserInfoMapper;
@@ -22,6 +24,8 @@ import java.math.BigDecimal;
 @Slf4j
 @Service
 public class AuthServiceImpl implements AuthService {
+    @Autowired
+    private MainAgent mainAgent;
     @Autowired
     private UserMapper userMapper;
     @Autowired
@@ -61,6 +65,14 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(bCryptPasswordEncoder.encode(password));
         user.setTime(System.currentTimeMillis());
         userMapper.insert(user);
+
+        //创建memory_id
+        try {
+            String memoryId = mainAgent.createMemoryId(Configs.ALI_WORKSPACE_ID, "用户:" + user.getId());
+            userMapper.setMemoryIdToId(user.getId(), memoryId);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
 
         //注册之后添加用户详细详细表
         UserInfoPO userInfo = new UserInfoPO();

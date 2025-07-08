@@ -26,7 +26,8 @@ public class SecurityConfig {
             "/auth/login",
             "/auth/register",
             "/auth/resetPassword",
-            "/dia/streamQuestion"
+            "/dia/streamQuestion",
+            "/main/ask"
     };
 
     @Autowired
