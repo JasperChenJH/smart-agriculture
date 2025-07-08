@@ -2,25 +2,28 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.soultalk.mapper.UserInfoMapper">
     <insert id="insertDetailInfo">
-        insert into user_info(user_id, nick_name, sex, birthday, age, zodiac, personality_type, hobbies, country, province, city)
-        values (#{userId}, #{nickName}, #{sex}, #{birthday}, #{age}, #{zodiac}, #{personalityType}, #{hobbies}, #{country}, #{province}, #{city})
+        insert into user_info(user_id, nick_name, sex, birthday, age, zodiac, personality_type, hobbies, country,
+                              province, city)
+        values (#{userId}, #{nickName}, #{sex}, #{birthday}, #{age}, #{zodiac}, #{personalityType}, #{hobbies},
+                #{country}, #{province}, #{city})
     </insert>
     <update id="updateDetailInfo">
         update soultalk.user_info
-        set nick_name = #{nickName},
-            sex = #{sex},
-            birthday = #{birthday},
-            age = #{age},
-            zodiac = #{zodiac},
+        set nick_name        = #{nickName},
+            sex              = #{sex},
+            birthday         = #{birthday},
+            age              = #{age},
+            zodiac           = #{zodiac},
             personality_type = #{personalityType},
-            hobbies = #{hobbies},
-            country = #{country},
-            province = #{province},
-            city = #{city}
+            hobbies          = #{hobbies},
+            country          = #{country},
+            province         = #{province},
+            city             = #{city}
         where user_id = #{userId}
     </update>
     <delete id="deleteByUserId">
-        delete from soultalk.user_info
+        delete
+        from soultalk.user_info
         where user_id = #{userId}
     </delete>
     <select id="getDetailInfoByUserId" resultType="com.soultalk.po.UserInfoPO">

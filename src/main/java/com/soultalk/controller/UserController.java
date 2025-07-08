@@ -2,12 +2,9 @@ package com.soultalk.controller;
 
 import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
-import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.PageResult;
 import com.soultalk.po.UserEmotionRecordPO;
 import com.soultalk.po.UserInfoPO;
-import com.soultalk.po.UserPO;
-import com.soultalk.service.AuthService;
 import com.soultalk.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +21,7 @@ import java.util.List;
 public class UserController {
     @Autowired
     private UserService userService;
+
     /**
      * 测试
      *
@@ -70,10 +68,12 @@ public class UserController {
         }
     }
     */
+
     /**
-     *  修改用户基本信息
+     * 修改用户基本信息
+     *
      * @param introduce 自我简介
-     * @param photo 用户头像
+     * @param photo     用户头像
      * @return
      */
     @PostMapping("/updateBaseInfo")
@@ -82,8 +82,10 @@ public class UserController {
         userService.updateBaseInfo(introduce, photo);
         return R.Success("修改成功");
     }
+
     /**
      * 修改用户密码
+     *
      * @param oldPassword 旧密码
      * @param newPassword 新密码
      * @return
@@ -100,6 +102,7 @@ public class UserController {
 
     /**
      * 注销账号
+     *
      * @return
      */
     @GetMapping("/drop")
@@ -107,6 +110,7 @@ public class UserController {
         userService.dropUser();
         return R.Success("删除成功");
     }
+
     /**
      * 获取用户详细信息
      *
@@ -139,7 +143,7 @@ public class UserController {
      */
 
     @GetMapping("/emotion/pagelist")
-    public R getEmotionPageList(@RequestParam(value = "page",defaultValue = "1") Integer page, @RequestParam(value = "size",defaultValue = "10") Integer size) {
+    public R getEmotionPageList(@RequestParam(value = "page", defaultValue = "1") Integer page, @RequestParam(value = "size", defaultValue = "10") Integer size) {
         PageResult pageResult = userService.getEmotionPageList(page, size);
         return R.Success(pageResult);
     }

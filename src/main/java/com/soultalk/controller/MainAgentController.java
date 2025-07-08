@@ -1,8 +1,6 @@
 package com.soultalk.controller;
 
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.google.gson.JsonArray;
 import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.service.MainAgentService;

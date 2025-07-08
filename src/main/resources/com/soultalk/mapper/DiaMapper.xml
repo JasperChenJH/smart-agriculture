@@ -8,7 +8,7 @@
     <update id="updateContent">
         update soultalk.dia
         set content=#{content}.
-            update_time=CURRENT_TIMESTAMP
+                        update_time = CURRENT_TIMESTAMP
         where id = #{id}
     </update>
     <delete id="delete">

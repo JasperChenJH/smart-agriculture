@@ -8,17 +8,20 @@
     <select id="getEmotionPageList" resultType="com.soultalk.po.UserEmotionRecordPO">
         select *
         from soultalk.user_emotion_records
-        where user_id = #{userId} and status = 1
+        where user_id = #{userId}
+          and status = 1
         order by create_time desc
     </select>
     <select id="getEmotionChatList" resultType="com.soultalk.po.UserEmotionRecordPO">
         select *
         from soultalk.user_emotion_records
-        where user_id = #{userId} and status = 1 and create_time between #{startTime} and #{endTime}
+        where user_id = #{userId}
+          and status = 1
+          and create_time between #{startTime} and #{endTime}
         order by create_time desc
         limit #{items}
     </select>
-    <delete id="deleteBatch" >
+    <delete id="deleteBatch">
         delete from soultalk.user_emotion_records
         where id in
         <foreach item="id" collection="list" separator="," open="(" close=")">
@@ -26,7 +29,8 @@
         </foreach>
     </delete>
     <delete id="deleteAllByUserId">
-        delete from soultalk.user_emotion_records
+        delete
+        from soultalk.user_emotion_records
         where user_id = #{userId}
     </delete>
 </mapper>

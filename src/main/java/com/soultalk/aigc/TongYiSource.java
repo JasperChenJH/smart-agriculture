@@ -168,7 +168,7 @@ public class TongYiSource implements AIGCSource {
                 );
 
         //阻塞等待
-        while (!completed.get()){
+        while (!completed.get()) {
             Thread.yield();
         }
 

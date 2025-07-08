@@ -9,8 +9,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 public class UserInfoTest {
     @Resource
     UserService userService;
+
     @Test
-    public void testGetDetailInfo(){
+    public void testGetDetailInfo() {
 
     }
 }

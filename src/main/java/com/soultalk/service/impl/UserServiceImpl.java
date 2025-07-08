@@ -39,6 +39,7 @@ public class UserServiceImpl implements UserService {
     private BCryptPasswordEncoder bCryptPasswordEncoder;
     @Resource
     private DiaMapper diaMapper;
+
     @Override
     public UserPO info(Long id) {
         UserPO user = userMapper.selectById(id);
@@ -106,15 +107,14 @@ public class UserServiceImpl implements UserService {
         try {
             Long userId = Long.valueOf(BaseContext.getCurrentId());
             UserPO userPo = userMapper.selectById(userId);
-            if(bCryptPasswordEncoder.matches(oldPassword,userPo.getPassword())){
+            if (bCryptPasswordEncoder.matches(oldPassword, userPo.getPassword())) {
                 userPo.setPassword(bCryptPasswordEncoder.encode(newPassword));
                 userMapper.update(userPo);
                 return true;
-            }else {
+            } else {
                 return false;
             }
-        }
-       catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
     }
@@ -133,9 +133,10 @@ public class UserServiceImpl implements UserService {
         }
         userMapper.update(user);
     }
+
     @Transactional
     @Override
-    public void dropUser(){
+    public void dropUser() {
         Long userId = Long.valueOf(BaseContext.getCurrentId());
         emotionRecordMapper.deleteAllByUserId(userId);
         userInfoMapper.deleteByUserId(userId);

@@ -20,14 +20,14 @@ public interface MainAgent {
     Map<String, Object> getMemory(String workspaceId, String memoryId) throws Exception;
 
     //删除长期记忆体
-    void removeMemory(String workspaceId,String memoryId) throws Exception;
+    void removeMemory(String workspaceId, String memoryId) throws Exception;
 
     //清空长期记忆体（返回新ID）
-    String clearMemory(String workspaceId,String memoryId) throws Exception;
+    String clearMemory(String workspaceId, String memoryId) throws Exception;
 
     //列出所有长期记忆（workspace，单页个数，上次返回的token（引用））
-    List<Map<String, String>> listMemory(String workspaceId,Integer depart,String[] nextToken) throws Exception;
+    List<Map<String, String>> listMemory(String workspaceId, Integer depart, String[] nextToken) throws Exception;
 
     //更新长期记忆体的description
-    void updateMemoryDescription(String workspaceId,String memoryId,String description) throws Exception;
+    void updateMemoryDescription(String workspaceId, String memoryId, String description) throws Exception;
 }

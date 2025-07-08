@@ -1,7 +1,6 @@
 package com.soultalk.mapper;
 
 import com.soultalk.po.UserPO;
-import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

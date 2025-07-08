@@ -8,7 +8,7 @@
     <delete id="removeAllByUserId">
         delete
         from soultalk.dia_main
-        where user_id=#{userId}
+        where user_id = #{userId}
     </delete>
     <delete id="removeByIndex">
         delete

@@ -68,7 +68,7 @@ public class MainAgentServiceImpl implements MainAgentService {
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
-        }else {
+        } else {
             memoryId = userPO.getMemoryId();
         }
         assert memoryId != null;
@@ -173,7 +173,7 @@ public class MainAgentServiceImpl implements MainAgentService {
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
-        }else{
+        } else {
             memoryId = userPO.getMemoryId();
         }
         assert memoryId != null;

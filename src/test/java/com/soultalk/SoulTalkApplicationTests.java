@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 class SoulTalkApplicationTests {
     @Resource
     private DiaService diaService;
+
     @Test
     void contextLoads() {
 

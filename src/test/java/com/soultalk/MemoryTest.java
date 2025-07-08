@@ -16,10 +16,10 @@ public class MemoryTest {
     @Test
     public void test() {
         try {
-            String[] next= {""};
-            mainAgentSource.listMemory(Configs.ALI_WORKSPACE_ID,2,next);
+            String[] next = {""};
+            mainAgentSource.listMemory(Configs.ALI_WORKSPACE_ID, 2, next);
             System.out.println(next[0]);
-            } catch (Exception e) {
+        } catch (Exception e) {
             log.error(e.getMessage());
         }
     }
