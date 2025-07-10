@@ -38,7 +38,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseEntity<?> login(String name, String password) {
         UserPO user = userMapper.selectByName(name);
-        if (user != null) {
+        if (user != null && bCryptPasswordEncoder.matches(password, user.getPassword())) {
             String token = JwtUtils.generateToken(user.getId());
             return ResponseEntity.ok(new JwtResponse(token));
         }
