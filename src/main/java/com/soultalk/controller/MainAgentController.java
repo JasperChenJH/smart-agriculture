@@ -53,7 +53,7 @@ public class MainAgentController {
      * @return
      */
     @PostMapping("/ask")
-    public SseEmitter ask(@RequestParam("question") String question, @RequestParam(value = "stream", required = false) int stream) {
+    public SseEmitter ask(@RequestParam(value = "question") String question, @RequestParam(value = "stream", defaultValue = "0") int stream) {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
 
         //是否流式输出

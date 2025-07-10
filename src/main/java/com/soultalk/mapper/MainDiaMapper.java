@@ -19,4 +19,5 @@ public interface MainDiaMapper {
 
     //删除用户指定索引对话，时间倒序
     void removeByIndex(Long userId, Integer index);
+
 }

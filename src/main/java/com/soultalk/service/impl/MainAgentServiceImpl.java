@@ -183,6 +183,7 @@ public class MainAgentServiceImpl implements MainAgentService {
 
         List<Map<String, String>> messageList = new ArrayList<>();
         for (MainDiaPO dia : list) {
+            // TODO: 添加大模型的回复记忆
             if (dia.getIsUser() && dia.getSentence() != null && !dia.getSentence().isEmpty()) {
                 Map<String, String> m = new HashMap<>(1);
                 if (dia.getIsUser()) {

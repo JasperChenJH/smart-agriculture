@@ -3,10 +3,7 @@ package com.soultalk.service.impl;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.soultalk.context.BaseContext;
-import com.soultalk.mapper.DiaMapper;
-import com.soultalk.mapper.UserEmotionRecordMapper;
-import com.soultalk.mapper.UserInfoMapper;
-import com.soultalk.mapper.UserMapper;
+import com.soultalk.mapper.*;
 import com.soultalk.po.PageResult;
 import com.soultalk.po.UserEmotionRecordPO;
 import com.soultalk.po.UserInfoPO;
@@ -39,6 +36,10 @@ public class UserServiceImpl implements UserService {
     private BCryptPasswordEncoder bCryptPasswordEncoder;
     @Resource
     private DiaMapper diaMapper;
+    @Autowired
+    private UserEmotionRecordMapper userEmotionRecordMapper;
+    @Resource
+    MainDiaMapper mainDiaMapper;
 
     @Override
     public UserPO info(Long id) {
@@ -101,6 +102,11 @@ public class UserServiceImpl implements UserService {
         return list;
     }
 
+    @Override
+    public void insertEmotionRecord(UserEmotionRecordPO record) {
+        userEmotionRecordMapper.insert(record);
+    }
+
     @Transactional
     @Override
     public boolean updatePassword(String oldPassword, String newPassword) {
@@ -108,6 +114,8 @@ public class UserServiceImpl implements UserService {
             Long userId = Long.valueOf(BaseContext.getCurrentId());
             UserPO userPo = userMapper.selectById(userId);
             if (bCryptPasswordEncoder.matches(oldPassword, userPo.getPassword())) {
+                // 更新密码时间
+                userPo.setTime(System.currentTimeMillis());
                 userPo.setPassword(bCryptPasswordEncoder.encode(newPassword));
                 userMapper.update(userPo);
                 return true;
@@ -141,7 +149,7 @@ public class UserServiceImpl implements UserService {
         emotionRecordMapper.deleteAllByUserId(userId);
         userInfoMapper.deleteByUserId(userId);
         diaMapper.deleteByUserId(userId);
-        // TODO: 删除dia_main表中数据
+        mainDiaMapper.removeAllByUserId(userId);
         userMapper.deleteById(userId);
     }
 

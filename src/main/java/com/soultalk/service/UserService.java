@@ -30,6 +30,9 @@ public interface UserService {
     // 获取用户情感得分图表数据
     List<UserEmotionRecordPO> getEmotionChart(Integer items, Integer days);
 
+    // 插入用户情感得分记录
+    void insertEmotionRecord(UserEmotionRecordPO record);
+
     // 修改密码
     boolean updatePassword(String oldPassword, String newPassword);
 
