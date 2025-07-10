@@ -17,6 +17,9 @@
             <if test="photo != null">
                 photo = #{photo},
             </if>
+            <if test="time != null">
+                time = #{time},
+            </if>
         </set>
         where id = #{id}
     </update>
