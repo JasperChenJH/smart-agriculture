@@ -9,6 +9,7 @@ import com.soultalk.service.BaseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -121,14 +122,19 @@ public class AgentServiceImpl implements AgentService {
         }
 
         //解析图片
-        //TODO: 可以做图片删除
-        if (!photo.isEmpty()) {
-            String url = baseService.saveFileToOSS(photo.getOriginalFilename(), photo);
-            if (url != null) {
-                agent.setPhoto(url);
-            }
-        }
+        String oldPhotoUrl = agent.getPhoto();
+        try {
+            if (!photo.isEmpty()) {
+                String url = baseService.saveFileToOSS(photo.getOriginalFilename(), photo);
 
+                if (url == null) throw new Exception("图片上传失败");
+                agent.setPhoto(url);
+                baseService.removeFileFromOSS(oldPhotoUrl);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            agent.setPhoto(oldPhotoUrl);
+        }
 
         //api和模型必有一个
         if (agent.getModel() == null && agent.getApi() == null) {
@@ -141,6 +147,12 @@ public class AgentServiceImpl implements AgentService {
         return R.Success(agent.getName() + " 智能体信息已更新");
     }
 
+    /**
+     * 获取用户创建的智能体
+     *
+     * @param userId
+     * @return
+     */
     @Override
     public List<AgentPO> selectMyAgent(Long userId) {
         return agentMapper.selectMyAgent(userId);

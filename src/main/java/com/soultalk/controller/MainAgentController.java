@@ -12,7 +12,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * 主模型Controller
+ */
 @Slf4j
+@CrossOrigin
 @RestController
 @RequestMapping("/main")
 public class MainAgentController {
@@ -27,7 +31,9 @@ public class MainAgentController {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
         try {
             Long diaId = mainAgentService.initDia(userId);
-            assert diaId != null;
+            if( diaId == null){
+                throw new Exception("初始化对话失败");
+            }
 
             return R.Success(diaId + " 已创建");
         } catch (Exception e) {

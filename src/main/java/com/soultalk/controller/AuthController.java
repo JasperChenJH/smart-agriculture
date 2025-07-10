@@ -18,18 +18,36 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
+    /**
+     * 登录
+     * @param name
+     * @param password
+     * @return
+     */
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam("name") String name, @RequestParam("password") String password) {
         return authService.login(name, password);
     }
 
-    //注册
+    /**
+     * 注册
+     * @param name
+     * @param password
+     * @return
+     */
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestParam("name") String name, @RequestParam("password") String password) {
         return authService.register(name, password);
     }
 
-    //重设密码
+
+    /**
+     * 重置密码
+     * @param id
+     * @param oldPassword
+     * @param newPassword
+     * @return
+     */
     @PostMapping("/resetPassword")
     public R resetPassword(@RequestParam("id") String id, @RequestParam("oldpwd") String oldPassword, @RequestParam("newpwd") String newPassword) {
         try {

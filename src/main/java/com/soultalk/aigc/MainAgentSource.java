@@ -118,8 +118,8 @@ public class MainAgentSource implements MainAgent {
         return result;
     }
 
-    @Override
-    public String createMemoryId(String workspaceId, String description) throws Exception {
+    //建立长期记忆HTTP异步连接
+    private static AsyncClient getAsyncClient() {
         StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
                 //OSS的密钥通用
                 .accessKeyId(Configs.Ali_ACCESSKEY_ID)
@@ -136,6 +136,12 @@ public class MainAgentSource implements MainAgent {
                         //.setConnectTimeout(Duration.ofSeconds(30))
                 )
                 .build();
+        return client;
+    }
+
+    @Override
+    public String createMemoryId(String workspaceId, String description) throws Exception {
+        AsyncClient client = getAsyncClient();
 
         CreateMemoryRequest createMemoryRequest = CreateMemoryRequest.builder()
                 .workspaceId(workspaceId)
@@ -151,22 +157,7 @@ public class MainAgentSource implements MainAgent {
 
     @Override
     public Map<String, Object> getMemory(String workspaceId, String memoryId) throws Exception {
-        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
-                //OSS的密钥通用
-                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
-                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
-                .build());
-
-        AsyncClient client = AsyncClient.builder()
-                .region("cn-beijing") // Region ID
-                .credentialsProvider(provider)
-                .overrideConfiguration(
-                        ClientOverrideConfiguration.create()
-                                // Endpoint 请参考 https://api.aliyun.com/product/bailian
-                                .setEndpointOverride("bailian.cn-beijing.aliyuncs.com")
-                        //.setConnectTimeout(Duration.ofSeconds(30))
-                )
-                .build();
+        AsyncClient client = getAsyncClient();
 
         GetMemoryRequest getMemoryRequest = GetMemoryRequest.builder()
                 .workspaceId(workspaceId)
@@ -181,22 +172,7 @@ public class MainAgentSource implements MainAgent {
 
     @Override
     public void removeMemory(String workspaceId, String memoryId) throws Exception {
-        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
-                //OSS的密钥通用
-                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
-                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
-                .build());
-
-        AsyncClient client = AsyncClient.builder()
-                .region("cn-beijing") // Region ID
-                .credentialsProvider(provider)
-                .overrideConfiguration(
-                        ClientOverrideConfiguration.create()
-                                // Endpoint 请参考 https://api.aliyun.com/product/bailian
-                                .setEndpointOverride("bailian.cn-beijing.aliyuncs.com")
-                        //.setConnectTimeout(Duration.ofSeconds(30))
-                )
-                .build();
+        AsyncClient client = getAsyncClient();
 
         DeleteMemoryRequest deleteMemoryRequest = DeleteMemoryRequest.builder()
                 .workspaceId(workspaceId)
@@ -232,24 +208,11 @@ public class MainAgentSource implements MainAgent {
 
     @Override
     public List<Map<String, String>> listMemory(String workspaceId, Integer depart, String[] nextToken) throws Exception {
-        assert nextToken != null && nextToken.length == 1;
+        if( nextToken == null || nextToken.length != 1){
+            throw new Exception("nextToken长度为1并为数组");
+        }
 
-        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
-                //OSS的密钥通用
-                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
-                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
-                .build());
-
-        AsyncClient client = AsyncClient.builder()
-                .region("cn-beijing") // Region ID
-                .credentialsProvider(provider)
-                .overrideConfiguration(
-                        ClientOverrideConfiguration.create()
-                                // Endpoint 请参考 https://api.aliyun.com/product/bailian
-                                .setEndpointOverride("bailian.cn-beijing.aliyuncs.com")
-                        //.setConnectTimeout(Duration.ofSeconds(30))
-                )
-                .build();
+        AsyncClient client = getAsyncClient();
 
         ListMemoriesRequest listMemoriesRequest = ListMemoriesRequest.builder()
                 .workspaceId(workspaceId)
@@ -268,22 +231,7 @@ public class MainAgentSource implements MainAgent {
 
     @Override
     public void updateMemoryDescription(String workspaceId, String memoryId, String description) throws Exception {
-        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
-                //OSS的密钥通用
-                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
-                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
-                .build());
-
-        AsyncClient client = AsyncClient.builder()
-                .region("cn-beijing") // Region ID
-                .credentialsProvider(provider)
-                .overrideConfiguration(
-                        ClientOverrideConfiguration.create()
-                                // Endpoint 请参考 https://api.aliyun.com/product/bailian
-                                .setEndpointOverride("bailian.cn-beijing.aliyuncs.com")
-                        //.setConnectTimeout(Duration.ofSeconds(30))
-                )
-                .build();
+        AsyncClient client = getAsyncClient();
 
         UpdateMemoryRequest updateMemoryRequest = UpdateMemoryRequest.builder()
                 .workspaceId(workspaceId)

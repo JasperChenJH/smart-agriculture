@@ -23,7 +23,10 @@ public class BaseServiceImpl implements BaseService {
             return null;
         }
         String originalFileName = file.getOriginalFilename();
-        assert originalFileName != null;
+        if( originalFileName == null){
+            throw new RuntimeException("文件名错误");
+        }
+
         String ext = originalFileName.substring(originalFileName.lastIndexOf("."));
         String uuid = UUID.randomUUID().toString().replace("-", "");
         String objectName = uuid + ext;

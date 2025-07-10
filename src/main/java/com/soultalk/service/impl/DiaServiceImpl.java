@@ -87,7 +87,10 @@ public class DiaServiceImpl implements DiaService {
 
         AgentPO agent = null;
         DiaPO diaPO = diaMapper.selectDiaById(diaId);
-        assert diaPO != null;
+        if( diaPO == null) {
+            throw new RuntimeException("对话不存在");
+        }
+
         if (diaPO.getIsAgent() == 1) {
             agent = agentMapper.selectById(diaPO.getAgentId());
         }
@@ -120,7 +123,9 @@ public class DiaServiceImpl implements DiaService {
         } else {
             modelName = diaPO.getModel();
         }
-        assert modelName != null && !modelName.isEmpty();
+        if( modelName == null || modelName.isEmpty()){
+            throw new RuntimeException("模型不存在");
+        }
 
         //获取系统提示词
         String systemPrompt = null;
@@ -224,11 +229,13 @@ public class DiaServiceImpl implements DiaService {
         StringBuilder thkSb = new StringBuilder();
 
         //确认api
-        assert agent != null;
-        assert agent.getApi() != null;
+        if( agent == null||agent.getApi() == null){
+            throw new RuntimeException("请选择模型");
+        }
         String api = agent.getApi();
-
-        assert !api.isEmpty();
+        if( api.isEmpty()){
+            throw new RuntimeException("请选择模型");
+        }
 
         //获取上下文
         String str = diaPO.getContent();
@@ -316,7 +323,10 @@ public class DiaServiceImpl implements DiaService {
         //获取对话和模型情况
         AgentPO agent = null;
         DiaPO diaPO = diaMapper.selectDiaById(diaId);
-        assert diaPO != null;
+        if( diaPO == null) {
+            throw new RuntimeException("空对话");
+        }
+
         if (diaPO.getIsAgent() == 1) {
             agent = agentMapper.selectById(diaPO.getAgentId());
         }
@@ -368,7 +378,9 @@ public class DiaServiceImpl implements DiaService {
         } else {
             modelName = diaPO.getModel();
         }
-        assert modelName != null && !modelName.isEmpty();
+        if( modelName == null || modelName.isEmpty()){
+            throw new RuntimeException("未指定模型");
+        }
 
         //获取系统提示词
         String systemPrompt = null;
@@ -390,10 +402,13 @@ public class DiaServiceImpl implements DiaService {
     @Override
     public Map<String, String> appQuestion(AgentPO agent, DiaPO diaPO, List<JSONObject> messageList, String question) {
         //确认api
-        assert agent != null;
-        assert agent.getApi() != null;
+        if( agent== null || agent.getApi() == null){
+            throw new RuntimeException("未指定api");
+        }
         String api = agent.getApi();
-        assert !api.isEmpty();
+        if( api.isEmpty()){
+            throw new RuntimeException("未指定api");
+        }
 
         //执行请求
         Map<String, String> result = null;

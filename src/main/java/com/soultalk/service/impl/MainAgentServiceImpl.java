@@ -62,16 +62,13 @@ public class MainAgentServiceImpl implements MainAgentService {
         String memoryId = null;
         UserPO userPO = userMapper.selectById(userId);
         if (userPO.getMemoryId() == null) {
-            try {
-                memoryId = agentSource.createMemoryId(Configs.ALI_WORKSPACE_ID, "");
-                userMapper.setMemoryIdToId(userId, memoryId);
-            } catch (Exception e) {
-                log.error(e.getMessage());
-            }
+            this.createMemoryId(userId, Configs.ALI_WORKSPACE_ID + " " + userPO.getId());
         } else {
             memoryId = userPO.getMemoryId();
         }
-        assert memoryId != null;
+        if (memoryId == null) {
+            throw new RuntimeException("未获取到记忆ID");
+        }
 
 
         //处理上下文
@@ -167,16 +164,13 @@ public class MainAgentServiceImpl implements MainAgentService {
         String memoryId = null;
         UserPO userPO = userMapper.selectById(userId);
         if (userPO.getMemoryId() == null) {
-            try {
-                memoryId = agentSource.createMemoryId(Configs.ALI_WORKSPACE_ID, "");
-                userMapper.setMemoryIdToId(userId, memoryId);
-            } catch (Exception e) {
-                log.error(e.getMessage());
-            }
+            this.createMemoryId(userId, Configs.ALI_WORKSPACE_ID + " " + userPO.getId());
         } else {
             memoryId = userPO.getMemoryId();
         }
-        assert memoryId != null;
+        if (memoryId == null) {
+            throw new RuntimeException("未获取到记忆ID");
+        }
 
         //处理上下文
         List<MainDiaPO> list = mainDiaMapper.selectByUserId(userId);
@@ -228,5 +222,38 @@ public class MainAgentServiceImpl implements MainAgentService {
             throw new Exception("对话不存在");
         }
         mainDiaMapper.removeAllByUserId(userId);
+    }
+
+    @Override
+    public void createMemoryId(Long userId, String description) {
+        String memoryId = null;
+        try {
+            memoryId = agentSource.createMemoryId(Configs.ALI_WORKSPACE_ID, description);
+            userMapper.setMemoryIdToId(userId, memoryId);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    @Override
+    public String getMemoryId(Long userId) {
+        UserPO userPO = userMapper.selectById(userId);
+        return userPO.getMemoryId();
+    }
+
+    @Override
+    public void resetMemory(Long userId) {
+        try {
+            UserPO userPO = userMapper.selectById(userId);
+            if (userPO.getMemoryId() == null) {
+                throw new Exception("未获取到记忆ID");
+            }
+
+            String newMemoryId = agentSource.clearMemory(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId());
+            userPO.setMemoryId(newMemoryId);
+            userMapper.update(userPO);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
     }
 }

@@ -21,4 +21,13 @@ public interface MainAgentService {
 
     //清空上下文
     void removeContent(Long userId) throws Exception;
+
+    //创建长期记忆ID
+    void createMemoryId(Long userId, String description);
+
+    //获取长期记忆ID
+    String getMemoryId(Long userId);
+
+    //重置长期记忆
+    void resetMemory(Long userId);
 }

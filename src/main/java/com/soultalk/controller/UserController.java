@@ -16,6 +16,7 @@ import java.util.List;
 /**
  * 用户信息
  */
+@CrossOrigin
 @RestController
 @RequestMapping("/user")
 public class UserController {
