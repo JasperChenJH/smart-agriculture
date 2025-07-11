@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.service.MainAgentService;
+import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -63,23 +64,46 @@ public class MainAgentController {
     public SseEmitter ask(@RequestParam(value = "question") String question, @RequestParam(value = "stream", defaultValue = "0") int stream) {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
 
+        //新建sse
+        SseEmitter emitter = new SseEmitter(60_000L);
+
         //是否流式输出
         if (stream == 1) {
-            return mainAgentService.streamAsk(userId, question);
+            try {
+                mainAgentService.streamAsk(userId, question)
+                        .subscribeOn(Schedulers.io())
+                        .subscribe(message -> {
+                                    //发送消息
+                                    emitter.send(SseEmitter.event()
+                                            .data(message)
+                                    );
+
+                                },
+                                throwable -> {
+                                    log.error(throwable.getMessage());
+                                    emitter.send(SseEmitter.event().data("换个话题问问吧~"));
+                                },
+                                () -> {
+                                    emitter.send(SseEmitter.event().data("END"));
+                                    emitter.complete();
+                                }
+                        );
+            } catch (Exception e) {
+                log.error(e.getMessage());
+                emitter.completeWithError(e);
+            }
         } else {
             Map<String, String> result = mainAgentService.ask(userId, question);
-            //新建sse
-            SseEmitter emitter = new SseEmitter(60_000L);
 
             try {
                 //获取到返回的消息
                 JSONObject json = JSON.parseObject(result.get("answer"));
                 String emotion = json.getString("emotion");
                 String score = json.getString("score");
-                String response= json.getString("response");
+                String response = json.getString("response");
 
                 //校验
-                if(emotion == null || score == null || response == null){
+                if (emotion == null || score == null || response == null) {
                     emitter.send(SseEmitter.event().data("换个话题问问吧~"));
                     emitter.send(SseEmitter.event().data("END")); // 可选结束标记
                     emitter.complete();
@@ -87,8 +111,8 @@ public class MainAgentController {
                 }
 
                 //流式延迟发送
-                int sample=2;//单次发送的字符数
-                for (int i = 0; i < response.length(); i+= sample) {
+                int sample = 2;//单次发送的字符数
+                for (int i = 0; i < response.length(); i += sample) {
                     emitter.send(SseEmitter.event()
                             .data(response.substring(i, Math.min(i + sample, response.length())))
                     );
@@ -96,7 +120,7 @@ public class MainAgentController {
                     //延迟
                     try {
                         Thread.sleep(25);
-                    }catch (InterruptedException e){
+                    } catch (InterruptedException e) {
                         log.error(e.getMessage());
                     }
                 }
@@ -110,8 +134,9 @@ public class MainAgentController {
                 emitter.completeWithError(e);
             }
 
-            return emitter;
         }
+
+        return emitter;
     }
 
     /**

@@ -1,11 +1,10 @@
 package com.soultalk.service;
 
 import com.soultalk.po.MainDiaPO;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import io.reactivex.Flowable;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Flow;
 
 public interface MainAgentService {
     //创建第一个问候对话,返回id
@@ -15,7 +14,7 @@ public interface MainAgentService {
     List<MainDiaPO> get(Long userId);
 
     //流式请求应用
-    SseEmitter streamAsk(Long userId, String question);
+    Flowable<String> streamAsk(Long userId, String question);
 
     //非流式请求模型
     Map<String, String> ask(Long userId, String question);

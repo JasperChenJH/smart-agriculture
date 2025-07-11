@@ -13,7 +13,8 @@ public class LogAspect {
 
     /**
      * 日志输出
-     * @param joinPoint   切点
+     *
+     * @param joinPoint 切点
      * @throws Throwable
      */
     @Before("execution(* com.soultalk.controller.*.*(..))")

@@ -3,7 +3,6 @@ package com.soultalk.service.impl;
 import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
-import com.alibaba.fastjson.JSONObject;
 import com.aliyun.core.utils.StringUtils;
 import com.soultalk.aigc.MainAgent;
 import com.soultalk.config.Configs;
@@ -12,20 +11,22 @@ import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.MainDiaPO;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.MainAgentService;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.disposables.SerialDisposable;
 import io.reactivex.schedulers.Schedulers;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Service
@@ -91,7 +92,7 @@ public class MainAgentServiceImpl implements MainAgentService {
     }
 
     @Override
-    public SseEmitter streamAsk(Long userId, String question) {
+    public Flowable<String> streamAsk(Long userId, String question) {
         //初始化参数
         Params params = prepare(userId);
 
@@ -102,72 +103,107 @@ public class MainAgentServiceImpl implements MainAgentService {
         //上下文
         List<Map<String, String>> messageList = params.messageList;
 
-        // 1. 创建SseEmitter（超时设为3分钟）
-        SseEmitter emitter = new SseEmitter(180_000L);
 
-        // 2. 结果缓存
-        StringBuilder ansSb = new StringBuilder();
+        // 1. 结果缓存
+        StringBuilder getSb = new StringBuilder();
+        StringBuilder sendSb = new StringBuilder();
+        StringBuilder buffer = new StringBuilder();
+        AtomicBoolean lock = new AtomicBoolean(false);//锁定是否处理json
 
-        //异步生成发送
-        try {
-            Disposable disposable = agentSource.streamAppCall(api, memoryId, messageList, question)
-                    .subscribeOn(Schedulers.io())  // 在IO线程处理
-                    .subscribe(
-                            message -> {
-                                //解析think和ans
-                                String content = message.getOutput().getText();
-                                if (content != null && !content.isEmpty()) {
-                                    ansSb.append(content);
-                                    JSONObject answerObj = new JSONObject();
-                                    answerObj.put("type", "answer");
-                                    answerObj.put("data", content);
-                                    emitter.send(SseEmitter.event().data(answerObj.toString()));
-                                }
-                            },
-                            error -> {
-                                // 错误处理
-                                log.error(error.getMessage());
-                            },
-                            () -> {
-                                // 流正常结束
-                                //保存数据库
-                                CompletableFuture.runAsync(() -> {
-                                    MainDiaPO diaPO = new MainDiaPO();
-                                    diaPO.setUserId(userId);
-                                    diaPO.setIsUser(true);
-                                    diaPO.setSentence(question);
-                                    diaPO.setTime(System.currentTimeMillis());
-                                    mainDiaMapper.insert(diaPO);
-                                }).thenRun(() -> {
-                                    MainDiaPO diaPO = new MainDiaPO();
-                                    diaPO.setUserId(userId);
-                                    diaPO.setIsUser(false);
-                                    diaPO.setSentence(ansSb.toString());
-                                    diaPO.setTime(System.currentTimeMillis() + 1);
-                                    mainDiaMapper.insert(diaPO);
-                                }).thenRun(() -> {
-                                    try {
-                                        emitter.send(SseEmitter.event().data("END")); // 可选结束标记
-                                    } catch (IOException e) {
-                                        log.error(e.getMessage());
+        // 2. 创建String流
+        return Flowable.create(flowEmitter -> {
+            // 创建Disposable管理资源
+            final SerialDisposable disposable = new SerialDisposable();
+            flowEmitter.setDisposable(disposable);  // 绑定资源
+
+            //异步生成发送
+            try {
+                // 将订阅与Flowable绑定
+                Disposable d = agentSource.streamAppCall(api, memoryId, messageList, question)
+                        .subscribeOn(Schedulers.io())  // 在IO线程处理
+                        .subscribe(
+                                message -> {
+                                    //解析ans,假设没有think
+                                    String content = message.getOutput().getText();
+                                    if (content != null && !content.isEmpty()) {
+                                        getSb.append(content);
                                     }
-                                    emitter.complete();
-                                }).exceptionally(e -> {
-                                    emitter.completeWithError(e);
-                                    return null;
-                                });
-                            }
-                    );
+
+                                    //处理只返回response
+                                    if (!lock.get() && getSb.toString().contains("\"response\": \"")) {
+                                        lock.set(true);
+                                        int index = getSb.toString().indexOf("\"response\": \"")+13;
+                                        String text=getSb.substring(index, getSb.length());
+                                        flowEmitter.onNext(text);
+                                        sendSb.append(text);
+                                        return;
+                                    }
+
+                                    if ( lock.get()&&content != null && !content.isEmpty()) {
+                                        buffer.append(content); // 先加入缓存
+
+                                        // 当缓存长度 ≥4 时，处理可判定的字符
+                                        while (buffer.length() >= 6) {
+                                            int safeLen = buffer.length() - 5; // 除最后5字符外的长度
+
+                                            // 安全内容
+                                            flowEmitter.onNext(buffer.substring(0, safeLen));
+                                            sendSb.append(buffer, 0, safeLen);
 
 
-            // 3. 绑定清理逻辑（客户端断开时取消订阅）
-            emitter.onCompletion(disposable::dispose);
-            emitter.onTimeout(disposable::dispose);
+                                            buffer.delete(0, safeLen); // 保留最后5字符继续匹配
+                                        }
 
-        } catch (NoApiKeyException | InputRequiredException e) {
-            log.error(e.getMessage());
-        }
-        return emitter;
+
+                                    }
+                                },
+
+                                error -> {
+                                    // 错误处理
+                                    log.error(error.getMessage());
+                                },
+                                () -> {
+                                    // 检查缓存
+                                    if (buffer.length() >= 6 && buffer.substring(buffer.length() - 6).equals("}\n```")) {
+                                        buffer.setLength(buffer.length() - 6); // 直接丢弃结尾的 "\"}```"
+                                    }
+                                    flowEmitter.onNext(buffer.toString()); // 追加剩余缓存
+                                    sendSb.append(buffer);
+
+                                    flowEmitter.onComplete();
+
+                                    //保存数据库
+                                    CompletableFuture.runAsync(
+                                            flowEmitter::onComplete//结束flow流
+                                    ).thenRun(() -> {
+                                        MainDiaPO diaPO = new MainDiaPO();
+                                        diaPO.setUserId(userId);
+                                        diaPO.setIsUser(true);
+                                        diaPO.setSentence(question);
+                                        diaPO.setTime(System.currentTimeMillis());
+                                        mainDiaMapper.insert(diaPO);
+                                    }).thenRun(() -> {
+                                        MainDiaPO diaPO = new MainDiaPO();
+                                        diaPO.setUserId(userId);
+                                        diaPO.setIsUser(false);
+                                        diaPO.setSentence(sendSb.toString());
+                                        diaPO.setTime(System.currentTimeMillis() + 1);
+                                        mainDiaMapper.insert(diaPO);
+                                    }).exceptionally(e -> {
+                                        log.error(e.getMessage());
+                                        return null;
+                                    });
+                                }
+                        );
+
+                disposable.set(d);  // 绑定资源
+
+            } catch (NoApiKeyException | InputRequiredException e) {
+                log.error(e.getMessage());
+            }
+
+        }, BackpressureStrategy.BUFFER);//背压
+
     }
 
     @Override

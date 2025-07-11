@@ -24,6 +24,8 @@ import java.util.List;
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
+    @Resource
+    MainDiaMapper mainDiaMapper;
     @Autowired
     private BaseService baseService;
     @Autowired
@@ -38,8 +40,6 @@ public class UserServiceImpl implements UserService {
     private DiaMapper diaMapper;
     @Autowired
     private UserEmotionRecordMapper userEmotionRecordMapper;
-    @Resource
-    MainDiaMapper mainDiaMapper;
 
     @Override
     public UserPO info(Long id) {
