@@ -11,6 +11,9 @@
             <if test="password != null">
                 password = #{password},
             </if>
+            <if test="memoryId != null">
+                memory_id = #{memoryId},
+            </if>
             <if test="introduce != null">
                 introduce = #{introduce},
             </if>

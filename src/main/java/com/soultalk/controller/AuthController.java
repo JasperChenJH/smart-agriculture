@@ -20,6 +20,7 @@ public class AuthController {
 
     /**
      * 登录
+     *
      * @param name
      * @param password
      * @return
@@ -31,6 +32,7 @@ public class AuthController {
 
     /**
      * 注册
+     *
      * @param name
      * @param password
      * @return
@@ -43,6 +45,7 @@ public class AuthController {
 
     /**
      * 重置密码
+     *
      * @param id
      * @param oldPassword
      * @param newPassword

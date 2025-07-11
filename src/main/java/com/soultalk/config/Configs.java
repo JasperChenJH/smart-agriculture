@@ -20,4 +20,6 @@ public class Configs {
     //主模型API
     public static final String MAIN_MODEL_API = "f304bf9d8d5741cba89bf9145c377657";
 
+    //模型携带上下文轮数
+    public static final Integer MODEL_CONTEXT_ROUND = 20;
 }

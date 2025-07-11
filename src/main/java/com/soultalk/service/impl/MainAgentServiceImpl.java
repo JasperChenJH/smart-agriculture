@@ -4,6 +4,7 @@ import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.fastjson.JSONObject;
+import com.aliyun.core.utils.StringUtils;
 import com.soultalk.aigc.MainAgent;
 import com.soultalk.config.Configs;
 import com.soultalk.mapper.MainDiaMapper;
@@ -53,39 +54,53 @@ public class MainAgentServiceImpl implements MainAgentService {
         return mainDiaMapper.selectByUserId(userId);
     }
 
-    @Override
-    public SseEmitter streamAsk(Long userId, String question) {
-        //确认api
-        String api = Configs.MAIN_MODEL_API;
+    /**
+     * 初始化参数
+     */
+    private Params prepare(Long userId) {
+        // 1. 设置API
+        final String api = Configs.MAIN_MODEL_API;
 
-        //获取长期记忆ID
-        String memoryId = null;
+        // 2. 处理记忆ID
         UserPO userPO = userMapper.selectById(userId);
-        if (userPO.getMemoryId() == null) {
-            this.createMemoryId(userId, Configs.ALI_WORKSPACE_ID + " " + userPO.getId());
-        } else {
+        String memoryId = userPO.getMemoryId();
+        if (memoryId == null) {
+            createMemoryId(userId, Configs.ALI_WORKSPACE_ID + " " + userPO.getId());
+            userPO = userMapper.selectById(userId);
             memoryId = userPO.getMemoryId();
         }
         if (memoryId == null) {
-            throw new RuntimeException("未获取到记忆ID");
+            throw new RuntimeException("MEMORY_ID错误");
         }
 
-
-        //处理上下文
-        List<MainDiaPO> list = mainDiaMapper.selectByUserId(userId);
-
+        // 3. 构建消息列表
         List<Map<String, String>> messageList = new ArrayList<>();
-        for (MainDiaPO dia : list) {
-            if (dia.getIsUser() && dia.getSentence() != null && !dia.getSentence().isEmpty()) {
-                Map<String, String> m = new HashMap<>(1);
-                if (dia.getIsUser()) {
-                    m.put(Role.USER.getValue(), dia.getSentence());
-                } else {
-                    m.put(Role.SYSTEM.getValue(), dia.getSentence());
-                }
-                messageList.add(m);
+
+        List<MainDiaPO> dialogList = mainDiaMapper.selectByUserId(userId);
+        //限定长度
+        for (int i = 0; i < Configs.MODEL_CONTEXT_ROUND && i < dialogList.size(); i++) {
+            MainDiaPO dia = dialogList.get(i);
+            if (dia.getIsUser() && !StringUtils.isEmpty(dia.getSentence())) {
+                Map<String, String> messageMap = new HashMap<>(1);
+                messageMap.put(Role.USER.getValue(), dia.getSentence());
+                messageList.add(messageMap);
             }
         }
+
+        return new Params(api, memoryId, messageList);
+    }
+
+    @Override
+    public SseEmitter streamAsk(Long userId, String question) {
+        //初始化参数
+        Params params = prepare(userId);
+
+        //模型api
+        String api = params.api;
+        //长期记忆ID
+        String memoryId = params.memoryId;
+        //上下文
+        List<Map<String, String>> messageList = params.messageList;
 
         // 1. 创建SseEmitter（超时设为3分钟）
         SseEmitter emitter = new SseEmitter(180_000L);
@@ -157,37 +172,15 @@ public class MainAgentServiceImpl implements MainAgentService {
 
     @Override
     public Map<String, String> ask(Long userId, String question) {
-        //确认api
-        String api = Configs.MAIN_MODEL_API;
+        //初始化参数
+        Params params = prepare(userId);
 
-        //获取长期记忆ID
-        String memoryId = null;
-        UserPO userPO = userMapper.selectById(userId);
-        if (userPO.getMemoryId() == null) {
-            this.createMemoryId(userId, Configs.ALI_WORKSPACE_ID + " " + userPO.getId());
-        } else {
-            memoryId = userPO.getMemoryId();
-        }
-        if (memoryId == null) {
-            throw new RuntimeException("未获取到记忆ID");
-        }
-
-        //处理上下文
-        List<MainDiaPO> list = mainDiaMapper.selectByUserId(userId);
-
-        List<Map<String, String>> messageList = new ArrayList<>();
-        for (MainDiaPO dia : list) {
-            // TODO: 添加大模型的回复记忆
-            if (dia.getIsUser() && dia.getSentence() != null && !dia.getSentence().isEmpty()) {
-                Map<String, String> m = new HashMap<>(1);
-                if (dia.getIsUser()) {
-                    m.put(Role.USER.getValue(), dia.getSentence());
-                } else {
-                    m.put(Role.SYSTEM.getValue(), dia.getSentence());
-                }
-                messageList.add(m);
-            }
-        }
+        //模型api
+        String api = params.api;
+        //长期记忆ID
+        String memoryId = params.memoryId;
+        //上下文
+        List<Map<String, String>> messageList = params.messageList;
 
         //执行请求
         Map<String, String> result = null;
@@ -256,5 +249,8 @@ public class MainAgentServiceImpl implements MainAgentService {
         } catch (Exception e) {
             log.error(e.getMessage());
         }
+    }
+
+    private record Params(String api, String memoryId, List<Map<String, String>> messageList) {
     }
 }

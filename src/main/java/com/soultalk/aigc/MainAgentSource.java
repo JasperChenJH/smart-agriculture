@@ -29,6 +29,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public class MainAgentSource implements MainAgent {
 
+    //建立长期记忆HTTP异步连接
+    private static AsyncClient getAsyncClient() {
+        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
+                //OSS的密钥通用
+                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
+                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
+                .build());
+
+        AsyncClient client = AsyncClient.builder()
+                .region("cn-beijing") // Region ID
+                .credentialsProvider(provider)
+                .overrideConfiguration(
+                        ClientOverrideConfiguration.create()
+                                // Endpoint 请参考 https://api.aliyun.com/product/bailian
+                                .setEndpointOverride("bailian.cn-beijing.aliyuncs.com")
+                        //.setConnectTimeout(Duration.ofSeconds(30))
+                )
+                .build();
+        return client;
+    }
+
     @Override
     public Flowable<ApplicationResult> streamAppCall(String appKey, String memoryId, List<Map<String, String>> conntentList, String question) throws NoApiKeyException, InputRequiredException {
         List<Message> messageList = new ArrayList<>();
@@ -118,27 +139,6 @@ public class MainAgentSource implements MainAgent {
         return result;
     }
 
-    //建立长期记忆HTTP异步连接
-    private static AsyncClient getAsyncClient() {
-        StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
-                //OSS的密钥通用
-                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
-                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
-                .build());
-
-        AsyncClient client = AsyncClient.builder()
-                .region("cn-beijing") // Region ID
-                .credentialsProvider(provider)
-                .overrideConfiguration(
-                        ClientOverrideConfiguration.create()
-                                // Endpoint 请参考 https://api.aliyun.com/product/bailian
-                                .setEndpointOverride("bailian.cn-beijing.aliyuncs.com")
-                        //.setConnectTimeout(Duration.ofSeconds(30))
-                )
-                .build();
-        return client;
-    }
-
     @Override
     public String createMemoryId(String workspaceId, String description) throws Exception {
         AsyncClient client = getAsyncClient();
@@ -190,11 +190,18 @@ public class MainAgentSource implements MainAgent {
         String description = "";
 
         try {
-            description = this.getMemory(workspaceId, memoryId).get("description").toString();
+            Map<String, Object> map = this.getMemory(workspaceId, memoryId);
+            if (map != null && map.containsKey("description")) {
+                description = String.valueOf(map.get("description"));
+            }
             this.removeMemory(workspaceId, memoryId);
         } catch (Exception e) {
             log.error("error: {}", e.getMessage());
-            throw e;
+
+            //notfound就继续创建
+            if (!e.getMessage().contains("MemoryIdNotFound")) {
+                throw e;
+            }
         }
 
         //生成新ID
@@ -208,7 +215,7 @@ public class MainAgentSource implements MainAgent {
 
     @Override
     public List<Map<String, String>> listMemory(String workspaceId, Integer depart, String[] nextToken) throws Exception {
-        if( nextToken == null || nextToken.length != 1){
+        if (nextToken == null || nextToken.length != 1) {
             throw new Exception("nextToken长度为1并为数组");
         }
 

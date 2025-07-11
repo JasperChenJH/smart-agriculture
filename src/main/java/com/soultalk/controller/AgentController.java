@@ -26,6 +26,7 @@ public class AgentController {
 
     /**
      * 创建智能体
+     *
      * @param jsonData
      * @param photo
      * @return
@@ -43,6 +44,7 @@ public class AgentController {
 
     /**
      * 查询用户可见的所有智能体
+     *
      * @return
      */
     @GetMapping("/select/all")
@@ -54,6 +56,7 @@ public class AgentController {
 
     /**
      * 获取指定ID的智能体
+     *
      * @param agentId
      * @return
      */
@@ -69,6 +72,7 @@ public class AgentController {
 
     /**
      * 搜索智能体Name(模糊匹配)
+     *
      * @param name
      * @return
      */
@@ -81,6 +85,7 @@ public class AgentController {
 
     /**
      * 更新智能体
+     *
      * @param jsonData json格式的 会修改的 数据
      * @param photo
      * @return

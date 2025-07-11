@@ -87,7 +87,7 @@ public class DiaServiceImpl implements DiaService {
 
         AgentPO agent = null;
         DiaPO diaPO = diaMapper.selectDiaById(diaId);
-        if( diaPO == null) {
+        if (diaPO == null) {
             throw new RuntimeException("对话不存在");
         }
 
@@ -123,7 +123,7 @@ public class DiaServiceImpl implements DiaService {
         } else {
             modelName = diaPO.getModel();
         }
-        if( modelName == null || modelName.isEmpty()){
+        if (modelName == null || modelName.isEmpty()) {
             throw new RuntimeException("模型不存在");
         }
 
@@ -229,11 +229,11 @@ public class DiaServiceImpl implements DiaService {
         StringBuilder thkSb = new StringBuilder();
 
         //确认api
-        if( agent == null||agent.getApi() == null){
+        if (agent == null || agent.getApi() == null) {
             throw new RuntimeException("请选择模型");
         }
         String api = agent.getApi();
-        if( api.isEmpty()){
+        if (api.isEmpty()) {
             throw new RuntimeException("请选择模型");
         }
 
@@ -323,7 +323,7 @@ public class DiaServiceImpl implements DiaService {
         //获取对话和模型情况
         AgentPO agent = null;
         DiaPO diaPO = diaMapper.selectDiaById(diaId);
-        if( diaPO == null) {
+        if (diaPO == null) {
             throw new RuntimeException("空对话");
         }
 
@@ -378,7 +378,7 @@ public class DiaServiceImpl implements DiaService {
         } else {
             modelName = diaPO.getModel();
         }
-        if( modelName == null || modelName.isEmpty()){
+        if (modelName == null || modelName.isEmpty()) {
             throw new RuntimeException("未指定模型");
         }
 
@@ -402,11 +402,11 @@ public class DiaServiceImpl implements DiaService {
     @Override
     public Map<String, String> appQuestion(AgentPO agent, DiaPO diaPO, List<JSONObject> messageList, String question) {
         //确认api
-        if( agent== null || agent.getApi() == null){
+        if (agent == null || agent.getApi() == null) {
             throw new RuntimeException("未指定api");
         }
         String api = agent.getApi();
-        if( api.isEmpty()){
+        if (api.isEmpty()) {
             throw new RuntimeException("未指定api");
         }
 

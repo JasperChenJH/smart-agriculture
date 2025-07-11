@@ -23,7 +23,7 @@ public class BaseServiceImpl implements BaseService {
             return null;
         }
         String originalFileName = file.getOriginalFilename();
-        if( originalFileName == null){
+        if (originalFileName == null) {
             throw new RuntimeException("文件名错误");
         }
 

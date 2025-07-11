@@ -21,6 +21,7 @@
         select *
         from soultalk.dia_main
         where user_id = #{userId}
+        order by time desc
     </select>
     <select id="countByUserId" resultType="java.lang.Integer">
         select count(*)

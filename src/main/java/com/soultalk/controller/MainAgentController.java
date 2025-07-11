@@ -1,5 +1,6 @@
 package com.soultalk.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
@@ -31,7 +32,7 @@ public class MainAgentController {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
         try {
             Long diaId = mainAgentService.initDia(userId);
-            if( diaId == null){
+            if (diaId == null) {
                 throw new Exception("初始化对话失败");
             }
 
@@ -68,24 +69,37 @@ public class MainAgentController {
         } else {
             Map<String, String> result = mainAgentService.ask(userId, question);
             //新建sse
-            SseEmitter emitter = new SseEmitter(120_000L);
+            SseEmitter emitter = new SseEmitter(60_000L);
 
             try {
-                //导入数据
-                JSONObject json1 = new JSONObject();
-                json1.put("type", "answer");
-                json1.put("data", result.get("answer"));
-                emitter.send(SseEmitter.event()
-                        .data(json1)
-                        .reconnectTime(5_000L)//重试时间
-                );
-                JSONObject json2 = new JSONObject();
-                json2.put("type", "think");
-                json2.put("data", result.get("think"));
-                emitter.send(SseEmitter.event()
-                        .data(json2)
-                        .reconnectTime(5_000L)//重试时间
-                );
+                //获取到返回的消息
+                JSONObject json = JSON.parseObject(result.get("answer"));
+                String emotion = json.getString("emotion");
+                String score = json.getString("score");
+                String response= json.getString("response");
+
+                //校验
+                if(emotion == null || score == null || response == null){
+                    emitter.send(SseEmitter.event().data("换个话题问问吧~"));
+                    emitter.send(SseEmitter.event().data("END")); // 可选结束标记
+                    emitter.complete();
+                    return emitter;
+                }
+
+                //流式延迟发送
+                int sample=2;//单次发送的字符数
+                for (int i = 0; i < response.length(); i+= sample) {
+                    emitter.send(SseEmitter.event()
+                            .data(response.substring(i, Math.min(i + sample, response.length())))
+                    );
+
+                    //延迟
+                    try {
+                        Thread.sleep(25);
+                    }catch (InterruptedException e){
+                        log.error(e.getMessage());
+                    }
+                }
 
                 //结束sse
                 emitter.send(SseEmitter.event().data("END")); // 可选结束标记
