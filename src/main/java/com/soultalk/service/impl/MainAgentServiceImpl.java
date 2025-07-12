@@ -3,14 +3,18 @@ package com.soultalk.service.impl;
 import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.aliyun.core.utils.StringUtils;
 import com.soultalk.aigc.MainAgent;
 import com.soultalk.config.Configs;
 import com.soultalk.mapper.MainDiaMapper;
 import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.MainDiaPO;
+import com.soultalk.po.UserEmotionRecordPO;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.MainAgentService;
+import com.soultalk.service.UserService;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
@@ -21,6 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +39,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MainAgentServiceImpl implements MainAgentService {
     @Resource
     private MainAgent agentSource;
+    @Autowired
+    private UserService userService;
     @Autowired
     private MainDiaMapper mainDiaMapper;
     @Autowired
@@ -51,8 +59,19 @@ public class MainAgentServiceImpl implements MainAgentService {
     }
 
     @Override
-    public List<MainDiaPO> get(Long userId) {
-        return mainDiaMapper.selectByUserId(userId);
+    public MainDiaPO get(Long userId, int index) {
+        return mainDiaMapper.selectByUserIdAndIndex(userId, index);
+    }
+
+
+    @Override
+    public List<MainDiaPO> getAll(Long userId) {
+        return mainDiaMapper.selectAllByUserId(userId);
+    }
+
+    @Override
+    public List<MainDiaPO> getRange(Long userId, Long begin, int length) {
+        return mainDiaMapper.selectRangeByUserId(userId, begin, length);
     }
 
     /**
@@ -77,7 +96,7 @@ public class MainAgentServiceImpl implements MainAgentService {
         // 3. 构建消息列表
         List<Map<String, String>> messageList = new ArrayList<>();
 
-        List<MainDiaPO> dialogList = mainDiaMapper.selectByUserId(userId);
+        List<MainDiaPO> dialogList = mainDiaMapper.selectAllByUserId(userId);
         //限定长度
         for (int i = 0; i < Configs.MODEL_CONTEXT_ROUND && i < dialogList.size(); i++) {
             MainDiaPO dia = dialogList.get(i);
@@ -132,28 +151,26 @@ public class MainAgentServiceImpl implements MainAgentService {
                                     //处理只返回response
                                     if (!lock.get() && getSb.toString().contains("\"response\": \"")) {
                                         lock.set(true);
-                                        int index = getSb.toString().indexOf("\"response\": \"")+13;
-                                        String text=getSb.substring(index, getSb.length());
+                                        int index = getSb.toString().indexOf("\"response\": \"") + 13;
+                                        String text = getSb.substring(index, getSb.length());
                                         flowEmitter.onNext(text);
                                         sendSb.append(text);
                                         return;
                                     }
 
-                                    if ( lock.get()&&content != null && !content.isEmpty()) {
+                                    if (lock.get() && content != null && !content.isEmpty()) {
                                         buffer.append(content); // 先加入缓存
 
                                         // 当缓存长度 ≥4 时，处理可判定的字符
-                                        while (buffer.length() >= 6) {
-                                            int safeLen = buffer.length() - 5; // 除最后5字符外的长度
+                                        while (buffer.length() > 7) {
+                                            int safeLen = buffer.length() - 7; // 除最后6字符外的长度
 
                                             // 安全内容
                                             flowEmitter.onNext(buffer.substring(0, safeLen));
                                             sendSb.append(buffer, 0, safeLen);
 
-
-                                            buffer.delete(0, safeLen); // 保留最后5字符继续匹配
+                                            buffer.delete(0, safeLen); // 保留最后6字符继续匹配
                                         }
-
 
                                     }
                                 },
@@ -164,13 +181,37 @@ public class MainAgentServiceImpl implements MainAgentService {
                                 },
                                 () -> {
                                     // 检查缓存
-                                    if (buffer.length() >= 6 && buffer.substring(buffer.length() - 6).equals("}\n```")) {
-                                        buffer.setLength(buffer.length() - 6); // 直接丢弃结尾的 "\"}```"
+                                    if (buffer.length() >= 7 && buffer.substring(buffer.length() - 7).contains("\"\n}")) {
+                                        int index = buffer.indexOf("\"\n}");
+                                        buffer.setLength(index); // 直接丢弃结尾的 "\"\n}```"
                                     }
-                                    flowEmitter.onNext(buffer.toString()); // 追加剩余缓存
-                                    sendSb.append(buffer);
+                                    //最后一包
+                                    if (!buffer.isEmpty()) {
+                                        flowEmitter.onNext(buffer.toString()); // 追加剩余缓存
+                                        sendSb.append(buffer);
+                                    }
 
                                     flowEmitter.onComplete();
+
+                                    //获取情绪分数等
+                                    UserEmotionRecordPO record = new UserEmotionRecordPO(null, userId, null, null, question, 0, LocalDateTime.now());
+                                    try {
+                                        JSONObject json = JSON.parseObject(getSb.toString());
+                                        String emotion = (String) json.getOrDefault("emotion", "无效情绪");
+                                        record.setEmotion(emotion);
+
+                                        String score = (String) json.getOrDefault("score", "5");
+                                        record.setScore(new BigDecimal(score));
+
+                                        String response = (String) json.getOrDefault("response", "");
+                                        record.setStatus(response.isEmpty() ? 0 : 1);
+                                    } catch (Exception e) {
+                                        log.error(e.getMessage());
+                                        record.setStatus(0);
+                                    } finally {
+                                        //插入分数
+                                        userService.insertEmotionRecord(record);
+                                    }
 
                                     //保存数据库
                                     CompletableFuture.runAsync(

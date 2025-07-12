@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
+import com.soultalk.po.MainDiaPO;
 import com.soultalk.service.MainAgentService;
 import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
@@ -12,10 +13,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
- * 主模型Controller
+ * 主模型控制器
  */
 @Slf4j
 @CrossOrigin
@@ -45,20 +48,58 @@ public class MainAgentController {
     }
 
     /**
-     * 获取主模型的对话
+     * 获取某个对话index的详细
      *
+     * @param index 对话时间排序的索引
      * @return
      */
     @GetMapping("/get")
-    public R get() {
+    public R get(@RequestParam int index) {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
-        return R.Success(mainAgentService.get(userId));
+        return R.Success(mainAgentService.get(userId, index));
+    }
+
+    /**
+     * 获取用户的所有对话（慎用）
+     *
+     * @return list
+     */
+    @GetMapping("getAll")
+    public R getAll() {
+        Long userId = Long.parseLong(BaseContext.getCurrentId());
+        return R.Success(mainAgentService.getAll(userId));
+    }
+
+    /**
+     * 获取主模型的对话列表
+     *
+     * @param begin  起始索引
+     * @param length 获取长度
+     * @return list
+     */
+    @GetMapping("/getRange")
+    public R getRange(@RequestParam(value = "begin", defaultValue = "0", required = false) Long begin, @RequestParam(value = "length", defaultValue = "10", required = false) int length, @RequestParam(value = "group", defaultValue = "0", required = false) int group) {
+        Long userId = Long.parseLong(BaseContext.getCurrentId());
+        List<MainDiaPO> list = mainAgentService.getRange(userId, begin, length);
+
+        //筛选
+        List<MainDiaPO> result = new ArrayList<>();
+        if (group == 1) {
+            //只需要用户
+            result = list.stream().filter(MainDiaPO::getIsUser).toList();
+        } else if (group == 2) {
+            //只需要系统
+            result = list.stream().filter(dia -> !dia.getIsUser()).toList();
+        }
+        return R.Success(result);
     }
 
     /**
      * 提交问题
      *
-     * @return
+     * @param question 问题内容
+     * @param stream   是否流式输出
+     * @return SseEmitter
      */
     @PostMapping("/ask")
     public SseEmitter ask(@RequestParam(value = "question") String question, @RequestParam(value = "stream", defaultValue = "0") int stream) {
@@ -142,7 +183,7 @@ public class MainAgentController {
     /**
      * 清除上下文
      *
-     * @return
+     * @return void
      */
     @GetMapping("/clear")
     public R clear() {

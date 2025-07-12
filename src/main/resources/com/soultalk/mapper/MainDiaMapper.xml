@@ -17,7 +17,7 @@
         order by time desc
         limit #{index},1
     </delete>
-    <select id="selectByUserId" resultType="com.soultalk.po.MainDiaPO">
+    <select id="selectAllByUserId" resultType="com.soultalk.po.MainDiaPO">
         select *
         from soultalk.dia_main
         where user_id = #{userId}
@@ -27,5 +27,19 @@
         select count(*)
         from soultalk.dia_main
         where user_id = #{userId}
+    </select>
+    <select id="selectByUserIdAndIndex" resultType="com.soultalk.po.MainDiaPO">
+        select *
+        from dia_main
+        where user_id=#{userId}
+        order by time desc
+        limit #{index},1
+    </select>
+    <select id="selectRangeByUserId" resultType="com.soultalk.po.MainDiaPO">
+        select *
+        from dia_main
+        where user_id=#{userId}
+        order by time desc
+        limit #{begin},#{length}
     </select>
 </mapper>

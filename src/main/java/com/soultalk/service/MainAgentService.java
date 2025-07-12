@@ -11,7 +11,13 @@ public interface MainAgentService {
     Long initDia(Long userId);
 
     //获取某个用户的对话
-    List<MainDiaPO> get(Long userId);
+    MainDiaPO get(Long userId, int index);
+
+    //获取用户所有对话
+    List<MainDiaPO> getAll(Long userId);
+
+    //获取用户范围的对话
+    List<MainDiaPO> getRange(Long userId, Long begin, int length);
 
     //流式请求应用
     Flowable<String> streamAsk(Long userId, String question);

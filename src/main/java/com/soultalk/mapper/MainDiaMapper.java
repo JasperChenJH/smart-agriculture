@@ -9,7 +9,11 @@ import java.util.List;
 public interface MainDiaMapper {
     void insert(MainDiaPO dia);
 
-    List<MainDiaPO> selectByUserId(Long userId);
+    MainDiaPO selectByUserIdAndIndex(Long userId, Integer index);
+
+    List<MainDiaPO> selectRangeByUserId(Long userId, Long begin, Integer length);
+
+    List<MainDiaPO> selectAllByUserId(Long userId);
 
     //获取user共有多少对话
     Integer countByUserId(Long userId);
