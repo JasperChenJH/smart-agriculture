@@ -75,6 +75,7 @@ public class MainAgentController {
      *
      * @param begin  起始索引
      * @param length 获取长度
+     * @param group  0所有 1仅用户 2仅系统
      * @return list
      */
     @GetMapping("/getRange")
@@ -125,7 +126,7 @@ public class MainAgentController {
                                     emitter.send(SseEmitter.event().data("换个话题问问吧~"));
                                 },
                                 () -> {
-                                    emitter.send(SseEmitter.event().data("END"));
+                                    //结束sse
                                     emitter.complete();
                                 }
                         );
@@ -167,7 +168,6 @@ public class MainAgentController {
                 }
 
                 //结束sse
-                emitter.send(SseEmitter.event().data("END")); // 可选结束标记
                 emitter.complete();
 
             } catch (IOException e) {

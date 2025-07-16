@@ -142,16 +142,27 @@ public class MainAgentServiceImpl implements MainAgentService {
                         .subscribeOn(Schedulers.io())  // 在IO线程处理
                         .subscribe(
                                 message -> {
-                                    //解析ans,假设没有think
                                     String content = message.getOutput().getText();
+
                                     if (content != null && !content.isEmpty()) {
+                                        //处理换行转义
+                                        StringBuilder contentSb = new StringBuilder();
+                                        if (!buffer.isEmpty()) {
+                                            contentSb.append(buffer.charAt(buffer.length() - 1));
+                                        }
+                                        contentSb.append(content);
+                                        content = contentSb.toString()
+                                                .replace("\\n", "\\\\n")
+                                                .substring(1);
+
+                                        //解析ans,假设没有think
                                         getSb.append(content);
                                     }
 
                                     //处理只返回response
-                                    if (!lock.get() && getSb.toString().contains("\"response\": \"")) {
+                                    if (!lock.get() && getSb.toString().contains("\"response\":\"")) {
                                         lock.set(true);
-                                        int index = getSb.toString().indexOf("\"response\": \"") + 13;
+                                        int index = getSb.toString().indexOf("\"response\":\"") + 12;
                                         String text = getSb.substring(index, getSb.length());
                                         flowEmitter.onNext(text);
                                         sendSb.append(text);
@@ -162,8 +173,8 @@ public class MainAgentServiceImpl implements MainAgentService {
                                         buffer.append(content); // 先加入缓存
 
                                         // 当缓存长度 ≥4 时，处理可判定的字符
-                                        while (buffer.length() > 7) {
-                                            int safeLen = buffer.length() - 7; // 除最后6字符外的长度
+                                        while (buffer.length() > 4) {
+                                            int safeLen = buffer.length() - 4; // 除最后6字符外的长度
 
                                             // 安全内容
                                             flowEmitter.onNext(buffer.substring(0, safeLen));
@@ -181,9 +192,9 @@ public class MainAgentServiceImpl implements MainAgentService {
                                 },
                                 () -> {
                                     // 检查缓存
-                                    if (buffer.length() >= 7 && buffer.substring(buffer.length() - 7).contains("\"\n}")) {
-                                        int index = buffer.indexOf("\"\n}");
-                                        buffer.setLength(index); // 直接丢弃结尾的 "\"\n}```"
+                                    if (buffer.length() >= 4 && buffer.toString().contains("\"}")) {
+                                        int index = buffer.indexOf("\"}");
+                                        buffer.setLength(index); // 直接丢弃结尾的 "}
                                     }
                                     //最后一包
                                     if (!buffer.isEmpty()) {
@@ -196,7 +207,10 @@ public class MainAgentServiceImpl implements MainAgentService {
                                     //获取情绪分数等
                                     UserEmotionRecordPO record = new UserEmotionRecordPO(null, userId, null, null, question, 0, LocalDateTime.now());
                                     try {
-                                        JSONObject json = JSON.parseObject(getSb.toString());
+                                        //切割出JSON
+                                        int l = getSb.indexOf("{");
+                                        int r = getSb.lastIndexOf("}");
+                                        JSONObject json = JSON.parseObject(getSb.substring(l, r + 1));
                                         String emotion = (String) json.getOrDefault("emotion", "无效情绪");
                                         record.setEmotion(emotion);
 
@@ -268,7 +282,7 @@ public class MainAgentServiceImpl implements MainAgentService {
             return result;
         }
 
-        //保存数据库
+        //保存数据库 输入
         MainDiaPO diaPO1 = new MainDiaPO();
         diaPO1.setUserId(userId);
         diaPO1.setIsUser(true);
@@ -276,10 +290,35 @@ public class MainAgentServiceImpl implements MainAgentService {
         diaPO1.setTime(System.currentTimeMillis());
         mainDiaMapper.insert(diaPO1);
 
+        //保存数据库 输出
+        UserEmotionRecordPO record = new UserEmotionRecordPO(null, userId, null, null, question, 0, LocalDateTime.now());
+        String response = null;
+        try {
+            //切割出JSON
+            String answer = result.get("answer");
+            int l = answer.indexOf("{");
+            int r = answer.lastIndexOf("}");
+            JSONObject json = JSON.parseObject(answer.substring(l, r + 1));
+            String emotion = (String) json.getOrDefault("emotion", "无效情绪");
+            record.setEmotion(emotion);
+
+            String score = (String) json.getOrDefault("score", "5");
+            record.setScore(new BigDecimal(score));
+
+            response = (String) json.getOrDefault("response", "");
+            record.setStatus(response.isEmpty() ? 0 : 1);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            record.setStatus(0);
+        } finally {
+            //插入分数
+            userService.insertEmotionRecord(record);
+        }
+
         MainDiaPO diaPO2 = new MainDiaPO();
         diaPO2.setUserId(userId);
         diaPO2.setIsUser(false);
-        diaPO2.setSentence(result.get("answer"));
+        diaPO2.setSentence(response);
         diaPO2.setTime(System.currentTimeMillis());
         mainDiaMapper.insert(diaPO2);
 
