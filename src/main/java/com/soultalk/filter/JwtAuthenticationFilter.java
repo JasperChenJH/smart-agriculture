@@ -31,8 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/auth/login",
             "/auth/register",
             "/auth/resetPassword",
-            "/audio/recognize",
-            "/audio/sse"
+            "/ws/speech"
     );
     @Autowired
     private UserMapper userMapper;

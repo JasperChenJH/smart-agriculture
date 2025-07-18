@@ -29,8 +29,7 @@ public class SecurityConfig {
             "/auth/resetPassword",
             "/dia/streamQuestion",
             "/main/ask",
-            "/audio/recognize",
-            "/audio/sse"
+            "/ws/speech"
     };
 
     @Autowired

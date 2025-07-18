@@ -174,13 +174,13 @@ public class MainAgentServiceImpl implements MainAgentService {
 
                                         // 当缓存长度 ≥4 时，处理可判定的字符
                                         while (buffer.length() > 4) {
-                                            int safeLen = buffer.length() - 4; // 除最后6字符外的长度
+                                            int safeLen = buffer.length() - 4; // 除最后4字符外的长度
 
                                             // 安全内容
                                             flowEmitter.onNext(buffer.substring(0, safeLen));
                                             sendSb.append(buffer, 0, safeLen);
 
-                                            buffer.delete(0, safeLen); // 保留最后6字符继续匹配
+                                            buffer.delete(0, safeLen); // 保留最后字符继续匹配
                                         }
 
                                     }

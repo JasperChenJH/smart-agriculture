@@ -10,7 +10,8 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -20,10 +21,10 @@ import java.util.concurrent.*;
 @Service
 @Slf4j
 public class AudioServiceImpl implements AudioService {
-    private static final int SAMPLE_RATE = 16000;
     private final ConcurrentMap<String, SessionState> sessionStates = new ConcurrentHashMap<>();
     private final ExecutorService recognitionExecutor;
     private final ScheduledExecutorService cleanupExecutor;
+
     @Autowired
     private Speech speech;
 
@@ -54,6 +55,7 @@ public class AudioServiceImpl implements AudioService {
         }
     }
 
+    @Override
     public void uploadData(String id, byte[] audioData) {
         if (audioData.length == 0) return;
         SessionState session = sessionStates.get(id);
@@ -71,39 +73,46 @@ public class AudioServiceImpl implements AudioService {
         }
     }
 
-
-    public SseEmitter createRecognitionSession() {
+    @Override
+    public String createRecognitionSession(WebSocketSession session, int sampleRate) {
         String sessionId = UUID.randomUUID().toString();
-        SessionState session = new SessionState();
-        sessionStates.put(sessionId, session);
-
-        SseEmitter emitter = new SseEmitter(600_000L);
-        session.sseEmitter = emitter;
-
-        //连接返回sessionId
-        try {
-            emitter.send("{\"sessionId\":\"" + sessionId + "\"}");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        emitter.onCompletion(() -> completeSession(sessionId));
-        emitter.onTimeout(() -> completeSession(sessionId));
-        emitter.onError((ex) -> completeSession(sessionId));
+        SessionState sessionState = new SessionState();
+        sessionState.webSocketSession = session;
+        sessionStates.put(sessionId, sessionState);
 
         recognitionExecutor.submit(() -> {
             try {
-                startRecognition(sessionId);
+                startRecognition(sessionId, sampleRate);
             } catch (Exception e) {
-                emitter.completeWithError(e);
+                log.error("Recognition error", e);
                 completeSession(sessionId);
             }
         });
 
-        return emitter;
+        return sessionId;
     }
 
-    private void startRecognition(String sessionId) throws NoApiKeyException {
+    @Override
+    public String getSessionIdBySession(WebSocketSession session) {
+        for (ConcurrentMap.Entry<String, SessionState> entry : sessionStates.entrySet()) {
+            if (entry.getValue().webSocketSession == session) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public WebSocketSession getSessionBySessionId(String sessionId) {
+        SessionState sessionState = sessionStates.get(sessionId);
+        if (sessionState == null) {
+            return null;
+        } else {
+            return sessionState.webSocketSession;
+        }
+    }
+
+    private void startRecognition(String sessionId, int sampleRate) throws NoApiKeyException {
         SessionState session = sessionStates.get(sessionId);
         if (session == null || session.completed) return;
 
@@ -121,8 +130,7 @@ public class AudioServiceImpl implements AudioService {
                 BackpressureStrategy.BUFFER
         );
 
-
-        speech.streamCall(audioSource, "pcm", SAMPLE_RATE)
+        speech.streamCall(audioSource, "pcm", sampleRate)
                 .blockingForEach(result -> {
                     sendRecognitionResult(sessionId,
                             result.getSentence().getText(),
@@ -134,16 +142,19 @@ public class AudioServiceImpl implements AudioService {
 
     private void sendRecognitionResult(String sessionId, String text, boolean isFinal) {
         SessionState session = sessionStates.get(sessionId);
-        if (session == null || session.completed || session.sseEmitter == null) return;
+        if (session == null || session.completed || session.webSocketSession == null) return;
 
         try {
-            session.sseEmitter.send("{\"text\":\"" + text + "\", \"final\":" + isFinal + "}");
+            String json = "{\"type\":\"result\",\"text\":\"" + text + "\",\"final\":" + isFinal + "}";
+            session.webSocketSession.sendMessage(new TextMessage(json));
         } catch (IOException e) {
+            log.error("Failed to send WebSocket message", e);
             completeSession(sessionId);
         }
     }
 
-    private void completeSession(String sessionId) {
+    @Override
+    public void completeSession(String sessionId) {
         SessionState session = sessionStates.get(sessionId);
         if (session == null) return;
 
@@ -152,8 +163,12 @@ public class AudioServiceImpl implements AudioService {
             if (session.rxEmitter != null && !session.rxEmitter.isCancelled()) {
                 session.rxEmitter.onComplete();
             }
-            if (session.sseEmitter != null) {
-                session.sseEmitter.complete();
+            if (session.webSocketSession != null && session.webSocketSession.isOpen()) {
+                try {
+                    session.webSocketSession.close();
+                } catch (IOException e) {
+                    log.error("Error closing WebSocket session", e);
+                }
             }
             sessionStates.remove(sessionId);
         }
@@ -163,14 +178,14 @@ public class AudioServiceImpl implements AudioService {
         sessionStates.entrySet().removeIf(entry -> {
             SessionState session = entry.getValue();
             synchronized (session) {
-                return session.completed || session.sseEmitter == null;
+                return session.completed || session.webSocketSession == null;
             }
         });
     }
 
     private static class SessionState {
         FlowableEmitter<ByteBuffer> rxEmitter;
-        SseEmitter sseEmitter;
+        WebSocketSession webSocketSession;
         BlockingQueue<ByteBuffer> audioBufferQueue = new LinkedBlockingQueue<>();
         volatile boolean completed = false;
     }
