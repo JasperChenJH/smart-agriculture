@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Component
-public class TongYiSource implements AIGCSource {
+public class TongYiSource implements AIGC {
 
     @Override
     public Map<String, String> call(String modelName, String systemPrompt, List<JSONObject> contentList, String question) throws NoApiKeyException, ApiException, InputRequiredException {

@@ -4,6 +4,7 @@ import com.soultalk.filter.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -27,7 +28,9 @@ public class SecurityConfig {
             "/auth/register",
             "/auth/resetPassword",
             "/dia/streamQuestion",
-            "/main/ask"
+            "/main/ask",
+            "/audio/recognize",
+            "/audio/sse"
     };
 
     @Autowired
@@ -52,6 +55,10 @@ public class SecurityConfig {
                 )
                 // 4. 设置访问控制规则
                 .authorizeHttpRequests(auth -> auth
+                        // 允许OPTIONS预检请求（重要）
+                        .requestMatchers(HttpMethod.OPTIONS, "/**")
+                        .permitAll()
+
                         // 4.1 开放白名单路径
                         .requestMatchers(EXCLUDE_URLS)
                         .permitAll()

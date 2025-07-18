@@ -30,7 +30,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final List<String> JWT_EXCLUDED = Arrays.asList(
             "/auth/login",
             "/auth/register",
-            "/auth/resetPassword"
+            "/auth/resetPassword",
+            "/audio/recognize",
+            "/audio/sse"
     );
     @Autowired
     private UserMapper userMapper;

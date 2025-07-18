@@ -315,6 +315,11 @@ public class MainAgentServiceImpl implements MainAgentService {
             userService.insertEmotionRecord(record);
         }
 
+        //转义
+        if (response != null) {
+            response = response.replace("\\n", "\\\\n");
+        }
+
         MainDiaPO diaPO2 = new MainDiaPO();
         diaPO2.setUserId(userId);
         diaPO2.setIsUser(false);

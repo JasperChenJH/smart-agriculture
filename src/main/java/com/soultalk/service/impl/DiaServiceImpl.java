@@ -5,7 +5,7 @@ import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson2.JSON;
-import com.soultalk.aigc.AIGCSource;
+import com.soultalk.aigc.AIGC;
 import com.soultalk.mapper.AgentMapper;
 import com.soultalk.mapper.DiaMapper;
 import com.soultalk.po.AgentPO;
@@ -33,7 +33,7 @@ public class DiaServiceImpl implements DiaService {
     @Autowired
     private AgentMapper agentMapper;
     @Resource
-    private AIGCSource tongYiSource;
+    private AIGC tongYiSource;
 
     @Override
     public Long createDia(Long userId, Long agentId) {
