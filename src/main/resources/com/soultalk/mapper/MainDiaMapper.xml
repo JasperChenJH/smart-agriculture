@@ -17,11 +17,12 @@
         order by time desc
         limit #{index},1
     </delete>
-    <select id="selectAllByUserId" resultType="com.soultalk.po.MainDiaPO">
+    <select id="selectAllByUserIdAsc" resultType="com.soultalk.po.MainDiaPO">
         select *
         from soultalk.dia_main
         where user_id = #{userId}
-        order by time desc
+        order by time
+        limit #{begin} , #{length}
     </select>
     <select id="countByUserId" resultType="java.lang.Integer">
         select count(*)
@@ -31,15 +32,22 @@
     <select id="selectByUserIdAndIndex" resultType="com.soultalk.po.MainDiaPO">
         select *
         from dia_main
-        where user_id=#{userId}
+        where user_id = #{userId}
         order by time desc
         limit #{index},1
     </select>
     <select id="selectRangeByUserId" resultType="com.soultalk.po.MainDiaPO">
         select *
         from dia_main
-        where user_id=#{userId}
+        where user_id = #{userId}
         order by time desc
         limit #{begin},#{length}
+    </select>
+    <select id="selectAllByUserIdDesc" resultType="com.soultalk.po.MainDiaPO">
+        select *
+        from soultalk.dia_main
+        where user_id = #{userId}
+        order by time desc
+        limit #{begin} , #{length}
     </select>
 </mapper>

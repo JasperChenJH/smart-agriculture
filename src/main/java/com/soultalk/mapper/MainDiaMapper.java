@@ -13,7 +13,9 @@ public interface MainDiaMapper {
 
     List<MainDiaPO> selectRangeByUserId(Long userId, Long begin, Integer length);
 
-    List<MainDiaPO> selectAllByUserId(Long userId);
+    List<MainDiaPO> selectAllByUserIdAsc(Long userId, Integer begin, Integer length);
+
+    List<MainDiaPO> selectAllByUserIdDesc(Long userId, Integer begin, Integer length);
 
     //获取user共有多少对话
     Integer countByUserId(Long userId);

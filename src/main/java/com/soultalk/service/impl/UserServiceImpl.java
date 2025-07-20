@@ -66,8 +66,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserInfoPO getDetailInfo() {
-        Long userId = Long.valueOf(BaseContext.getCurrentId());
+    public UserInfoPO getDetailInfo(Long userId) {
         UserInfoPO userInfo = userInfoMapper.getDetailInfoByUserId(userId);
         return userInfo;
     }

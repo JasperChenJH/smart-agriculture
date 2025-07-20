@@ -16,4 +16,5 @@ public class UserPO {
     private String introduce;
     private String photo;
     private String memoryId;
+    private String sessionId;
 }

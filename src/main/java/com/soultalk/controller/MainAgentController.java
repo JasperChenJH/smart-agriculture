@@ -2,10 +2,14 @@ package com.soultalk.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.soultalk.aigc.MainAgent;
+import com.soultalk.config.Configs;
 import com.soultalk.context.BaseContext;
 import com.soultalk.controller.request.R;
 import com.soultalk.po.MainDiaPO;
+import com.soultalk.po.UserInfoPO;
 import com.soultalk.service.MainAgentService;
+import com.soultalk.service.UserService;
 import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * 主模型控制器
@@ -27,6 +32,10 @@ import java.util.Map;
 public class MainAgentController {
     @Autowired
     private MainAgentService mainAgentService;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private MainAgent mainAgent;
 
     /**
      * 创建主模型的对话
@@ -107,7 +116,7 @@ public class MainAgentController {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
 
         //新建sse
-        SseEmitter emitter = new SseEmitter(60_000L);
+        SseEmitter emitter = new SseEmitter(120_000L);
 
         //是否流式输出
         if (stream == 1) {
@@ -144,6 +153,13 @@ public class MainAgentController {
                 String score = json.getString("score");
                 String response = json.getString("response");
 
+                //转义
+                if (response != null) {
+                    response = response
+                            .replace("\\n", "\\\\n")  // 替换字面"\n"为"\\n"
+                            .replace("\n", "\\\\n");   // 替换LF字符为"\\n"
+                }
+
                 //校验
                 if (emotion == null || score == null || response == null) {
                     emitter.send(SseEmitter.event().data("换个话题问问吧~"));
@@ -153,7 +169,7 @@ public class MainAgentController {
                 }
 
                 //流式延迟发送
-                int sample = 2;//单次发送的字符数
+                int sample = 10;//单次发送的字符数
                 for (int i = 0; i < response.length(); i += sample) {
                     emitter.send(SseEmitter.event()
                             .data(response.substring(i, Math.min(i + sample, response.length())))
@@ -161,7 +177,7 @@ public class MainAgentController {
 
                     //延迟
                     try {
-                        Thread.sleep(25);
+                        Thread.sleep(10);
                     } catch (InterruptedException e) {
                         log.error(e.getMessage());
                     }
@@ -195,5 +211,66 @@ public class MainAgentController {
             log.error(e.getMessage());
             return R.Success(e);
         }
+    }
+
+    /**
+     * 重置长期记忆
+     *
+     * @return 已重置长期记忆
+     */
+    @GetMapping("/clearMemory")
+    public R clearMemory() {
+        try {
+            Long userId = Long.parseLong(BaseContext.getCurrentId());
+            mainAgentService.resetMemory(userId);
+            return R.Success(userId + " 已重置长期记忆");
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return R.Success(e);
+        }
+    }
+
+    @GetMapping("/uploadInfo")
+    public R uploadInfo() {
+        Long userId = Long.parseLong(BaseContext.getCurrentId());
+        UserInfoPO userInfoPO = userService.getDetailInfo(userId);
+
+        //校验
+        if (userInfoPO == null) {
+            return R.Failed("未找到该ID");
+        }
+
+        JSONObject json = new JSONObject();
+        json.put("昵称", userInfoPO.getNickName());
+        json.put("性别", userInfoPO.getSex().equals("1") ? "男" : "女");
+        json.put("出生日期", userInfoPO.getBirthday());
+        json.put("年龄", userInfoPO.getAge());
+        json.put("星座", userInfoPO.getZodiac());
+        json.put("MBTI人格类型", userInfoPO.getPersonalityType());
+        json.put("居住地址", userInfoPO.getCountry() + " " + userInfoPO.getProvince() + " " + userInfoPO.getCity());
+        json.put("兴趣爱好", userInfoPO.getHobbies());
+
+        String content = "记住用户的个人信息：" + json;
+
+        try {
+            String newMemoryId = mainAgentService.resetMemory(userId);
+            String newNodeId = mainAgent.createMemoryNode(Configs.ALI_WORKSPACE_ID, newMemoryId, content);
+            System.out.println(newNodeId);
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        return R.Success("已同步个人预设到大模型");
+    }
+
+    /**
+     * 获取长期记忆的全部片段
+     *
+     * @return
+     */
+    @GetMapping("/getMemoryNodes")
+    public JSONObject getMemoryNodes() {
+        Long userId = Long.parseLong(BaseContext.getCurrentId());
+        return mainAgentService.listMemoryNodes(userId);
     }
 }

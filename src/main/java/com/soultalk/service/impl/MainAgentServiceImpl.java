@@ -1,11 +1,10 @@
 package com.soultalk.service.impl;
 
-import com.alibaba.dashscope.common.Role;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.aliyun.core.utils.StringUtils;
+import com.aliyun.sdk.service.bailian20231229.models.ListMemoryNodesResponseBody;
 import com.soultalk.aigc.MainAgent;
 import com.soultalk.config.Configs;
 import com.soultalk.mapper.MainDiaMapper;
@@ -27,8 +26,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -45,6 +42,8 @@ public class MainAgentServiceImpl implements MainAgentService {
     private MainDiaMapper mainDiaMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private MainAgent mainAgent;
 
     @Override
     public Long initDia(Long userId) {
@@ -66,7 +65,7 @@ public class MainAgentServiceImpl implements MainAgentService {
 
     @Override
     public List<MainDiaPO> getAll(Long userId) {
-        return mainDiaMapper.selectAllByUserId(userId);
+        return mainDiaMapper.selectAllByUserIdDesc(userId, 0, Integer.MAX_VALUE);
     }
 
     @Override
@@ -93,21 +92,10 @@ public class MainAgentServiceImpl implements MainAgentService {
             throw new RuntimeException("MEMORY_ID错误");
         }
 
-        // 3. 构建消息列表
-        List<Map<String, String>> messageList = new ArrayList<>();
+        // 3. 构建消息session
+        String sessionId = userPO.getSessionId();
 
-        List<MainDiaPO> dialogList = mainDiaMapper.selectAllByUserId(userId);
-        //限定长度
-        for (int i = 0; i < Configs.MODEL_CONTEXT_ROUND && i < dialogList.size(); i++) {
-            MainDiaPO dia = dialogList.get(i);
-            if (dia.getIsUser() && !StringUtils.isEmpty(dia.getSentence())) {
-                Map<String, String> messageMap = new HashMap<>(1);
-                messageMap.put(Role.USER.getValue(), dia.getSentence());
-                messageList.add(messageMap);
-            }
-        }
-
-        return new Params(api, memoryId, messageList);
+        return new Params(api, memoryId, sessionId);
     }
 
     @Override
@@ -119,8 +107,8 @@ public class MainAgentServiceImpl implements MainAgentService {
         String api = params.api;
         //长期记忆ID
         String memoryId = params.memoryId;
-        //上下文
-        List<Map<String, String>> messageList = params.messageList;
+        //上下文session
+        UserPO userPO = userMapper.selectById(userId);
 
 
         // 1. 结果缓存
@@ -138,39 +126,58 @@ public class MainAgentServiceImpl implements MainAgentService {
             //异步生成发送
             try {
                 // 将订阅与Flowable绑定
-                Disposable d = agentSource.streamAppCall(api, memoryId, messageList, question)
+                Disposable d = agentSource.streamAppCall(api, memoryId, userPO.getSessionId(), question)
                         .subscribeOn(Schedulers.io())  // 在IO线程处理
                         .subscribe(
                                 message -> {
-                                    String content = message.getOutput().getText();
-
-                                    if (content != null && !content.isEmpty()) {
-                                        //处理换行转义
-                                        StringBuilder contentSb = new StringBuilder();
-                                        if (!buffer.isEmpty()) {
-                                            contentSb.append(buffer.charAt(buffer.length() - 1));
-                                        }
-                                        contentSb.append(content);
-                                        content = contentSb.toString()
-                                                .replace("\\n", "\\\\n")
-                                                .substring(1);
-
-                                        //解析ans,假设没有think
-                                        getSb.append(content);
+                                    if (message.getOutput().getText() != null && !message.getOutput().getSessionId().equals(userPO.getSessionId())) {
+                                        userPO.setSessionId(message.getOutput().getSessionId());
+                                        userMapper.update(userPO);
                                     }
+
+                                    String content = message.getOutput().getText();
 
                                     //处理只返回response
                                     if (!lock.get() && getSb.toString().contains("\"response\":\"")) {
                                         lock.set(true);
+
+                                        getSb.append(content);
                                         int index = getSb.toString().indexOf("\"response\":\"") + 12;
                                         String text = getSb.substring(index, getSb.length());
-                                        flowEmitter.onNext(text);
-                                        sendSb.append(text);
+
+                                        //发送
+                                        if (!text.isEmpty()) {
+                                            flowEmitter.onNext(text);
+                                            sendSb.append(text);
+                                        }
                                         return;
                                     }
 
                                     if (lock.get() && content != null && !content.isEmpty()) {
-                                        buffer.append(content); // 先加入缓存
+                                        //处理换行转义
+                                        StringBuilder contentSb = new StringBuilder();
+
+                                        //获取历史1个char
+                                        if (!buffer.isEmpty()) {
+                                            contentSb.append(buffer.charAt(buffer.length() - 1));
+                                        }
+                                        contentSb.append(content);
+
+                                        //转义
+                                        content = contentSb.toString()
+                                                .replace("\\n", "\\\\n")  // 替换字面"\n"为"\\n"
+                                                .replace("\n", "\\\\n"); // 替换LF字符为"\\n"
+
+                                        //删除历史的1个char
+                                        if (!buffer.isEmpty()) {
+                                            content = content.substring(1);
+                                        }
+
+                                        // 先加入缓存
+                                        buffer.append(content);
+
+                                        //get池中加入
+                                        getSb.append(content);
 
                                         // 当缓存长度 ≥4 时，处理可判定的字符
                                         while (buffer.length() > 4) {
@@ -184,6 +191,10 @@ public class MainAgentServiceImpl implements MainAgentService {
                                         }
 
                                     }
+
+                                    //get池中加入
+                                    getSb.append(content);
+
                                 },
 
                                 error -> {
@@ -205,7 +216,7 @@ public class MainAgentServiceImpl implements MainAgentService {
                                     flowEmitter.onComplete();
 
                                     //获取情绪分数等
-                                    UserEmotionRecordPO record = new UserEmotionRecordPO(null, userId, null, null, question, 0, LocalDateTime.now());
+                                    UserEmotionRecordPO record = new UserEmotionRecordPO(null, userId, "无效情绪", null, question, 0, LocalDateTime.now());
                                     try {
                                         //切割出JSON
                                         int l = getSb.indexOf("{");
@@ -213,6 +224,7 @@ public class MainAgentServiceImpl implements MainAgentService {
                                         JSONObject json = JSON.parseObject(getSb.substring(l, r + 1));
                                         String emotion = (String) json.getOrDefault("emotion", "无效情绪");
                                         record.setEmotion(emotion);
+
 
                                         String score = (String) json.getOrDefault("score", "5");
                                         record.setScore(new BigDecimal(score));
@@ -271,16 +283,21 @@ public class MainAgentServiceImpl implements MainAgentService {
         //长期记忆ID
         String memoryId = params.memoryId;
         //上下文
-        List<Map<String, String>> messageList = params.messageList;
+        String sessionId = params.sessionId;
 
         //执行请求
         Map<String, String> result = null;
         try {
-            result = agentSource.appCall(api, memoryId, messageList, question);
+            result = agentSource.appCall(api, memoryId, sessionId, question);
         } catch (NoApiKeyException | InputRequiredException e) {
             log.error(e.getMessage());
             return result;
         }
+
+        //保存sessionId
+        UserPO userPO = userMapper.selectById(userId);
+        userPO.setSessionId(result.getOrDefault("sessionId", null));
+        userMapper.update(userPO);
 
         //保存数据库 输入
         MainDiaPO diaPO1 = new MainDiaPO();
@@ -291,7 +308,7 @@ public class MainAgentServiceImpl implements MainAgentService {
         mainDiaMapper.insert(diaPO1);
 
         //保存数据库 输出
-        UserEmotionRecordPO record = new UserEmotionRecordPO(null, userId, null, null, question, 0, LocalDateTime.now());
+        UserEmotionRecordPO record = new UserEmotionRecordPO(null, userId, "无效情绪", BigDecimal.ZERO, question, 0, LocalDateTime.now());
         String response = null;
         try {
             //切割出JSON
@@ -313,11 +330,6 @@ public class MainAgentServiceImpl implements MainAgentService {
         } finally {
             //插入分数
             userService.insertEmotionRecord(record);
-        }
-
-        //转义
-        if (response != null) {
-            response = response.replace("\\n", "\\\\n");
         }
 
         MainDiaPO diaPO2 = new MainDiaPO();
@@ -357,21 +369,40 @@ public class MainAgentServiceImpl implements MainAgentService {
     }
 
     @Override
-    public void resetMemory(Long userId) {
+    public JSONObject listMemoryNodes(Long userId) {
+        JSONObject json = new JSONObject();
+
         try {
             UserPO userPO = userMapper.selectById(userId);
-            if (userPO.getMemoryId() == null) {
-                throw new Exception("未获取到记忆ID");
+            List<ListMemoryNodesResponseBody.MemoryNodes> list = mainAgent.listMemoryNodes(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), 50, null);
+            int i = 0;
+            for (ListMemoryNodesResponseBody.MemoryNodes memoryNodes : list) {
+                json.put(i + "0", memoryNodes.getMemoryNodeId());
+                json.put(i + "1", memoryNodes.getContent());
+                i++;
             }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        return json;
+    }
+
+    @Override
+    public String resetMemory(Long userId) {
+        try {
+            UserPO userPO = userMapper.selectById(userId);
 
             String newMemoryId = agentSource.clearMemory(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId());
             userPO.setMemoryId(newMemoryId);
+
             userMapper.update(userPO);
+            return newMemoryId;
         } catch (Exception e) {
             log.error(e.getMessage());
+            return null;
         }
     }
 
-    private record Params(String api, String memoryId, List<Map<String, String>> messageList) {
+    private record Params(String api, String memoryId, String sessionId) {
     }
 }

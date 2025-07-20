@@ -16,7 +16,7 @@ public interface UserService {
     String update(UserPO user, String introduce, MultipartFile photo);
 
     // 获取个人详细信息
-    UserInfoPO getDetailInfo();
+    UserInfoPO getDetailInfo(Long userId);
 
     // 更新个人详细信息
     void updateDetailInfo(UserInfoPO userInfo);

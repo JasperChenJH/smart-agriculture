@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
@@ -48,6 +49,83 @@ public class MainAgentSource implements MainAgent {
                 )
                 .build();
         return client;
+    }
+
+    @Override
+    public Flowable<ApplicationResult> streamAppCall(String appKey, String memoryId, String sessionId, String question) throws NoApiKeyException, InputRequiredException {
+        //调用API
+        ApplicationParam param = ApplicationParam.builder()
+                .apiKey(Configs.DASHSCOPE_API_KEY)
+                //api id
+                .appId(appKey)
+                //本次问题
+                .prompt(question)
+                //历史对话
+                .sessionId(sessionId)
+                // 长期记忆id
+                .memoryId(memoryId)
+                // 增量输出
+                .incrementalOutput(true)
+                // 替换为实际指定的知识库ID，逗号隔开多个
+//                .ragOptions(RagOptions.builder()
+//                        // 替换为实际指定的知识库ID，逗号隔开多个
+//                        .pipelineIds(List.of("PIPELINES_ID1", "PIPELINES_ID2"))
+//                        .build())
+                .build();
+
+        Application application = new Application();
+        return application.streamCall(param);
+    }
+
+    @Override
+    public Map<String, String> appCall(String appKey, String memoryId, String sessionId, String question) throws NoApiKeyException, InputRequiredException {
+        Map<String, String> result = new HashMap<>();
+
+        //临时存储
+        StringBuilder thkSb = new StringBuilder();
+        StringBuilder ansSb = new StringBuilder();
+
+        // 添加流处理完成标记
+        AtomicBoolean completed = new AtomicBoolean(false);
+
+        //流式转非流式
+        this.streamAppCall(appKey, memoryId, sessionId, question)
+                .subscribeOn(Schedulers.io())
+                //阻塞处理
+                .blockingSubscribe(
+                        message -> {
+                            if (message.getOutput().getSessionId() != null) {
+                                result.put("sessionId", message.getOutput().getSessionId());
+                            }
+
+                            //解析think和ans
+                            String content = message.getOutput().getText();
+                            if (content != null && !content.isEmpty()) {
+                                ansSb.append(content);
+                            }
+                            List<ApplicationOutput.Thought> thoughtList = message.getOutput().getThoughts();
+                            if (thoughtList != null && thoughtList.size() == 1 && thoughtList.get(0) != null && thoughtList.get(0).getThought() != null) {
+                                thkSb.append(thoughtList.get(0).getThought());
+                            }
+                        },
+                        throwable -> {
+                            log.error("error: {}", throwable.getMessage());
+                            completed.set(true);
+                        },
+                        () -> {
+                            completed.set(true);
+                        }
+                );
+
+        //阻塞等待
+        while (!completed.get()) {
+            Thread.yield();
+        }
+
+        //打包结果
+        result.put("think", thkSb.toString());
+        result.put("answer", ansSb.toString());
+        return result;
     }
 
     @Override
@@ -156,6 +234,23 @@ public class MainAgentSource implements MainAgent {
     }
 
     @Override
+    public String createMemoryNode(String workspaceId, String memoryId, String content) throws ExecutionException, InterruptedException {
+        AsyncClient client = getAsyncClient();
+
+        CreateMemoryNodeRequest createMemoryNodeRequest = CreateMemoryNodeRequest.builder()
+                .workspaceId(workspaceId)
+                .memoryId(memoryId)
+                .content(content)
+                .build();
+
+        CompletableFuture<CreateMemoryNodeResponse> response = client.createMemoryNode(createMemoryNodeRequest);
+        CreateMemoryNodeResponse resp = response.get();
+        client.close();
+
+        return resp.getBody().getMemoryNodeId();
+    }
+
+    @Override
     public Map<String, Object> getMemory(String workspaceId, String memoryId) throws Exception {
         AsyncClient client = getAsyncClient();
 
@@ -168,6 +263,28 @@ public class MainAgentSource implements MainAgent {
         GetMemoryResponse resp = response.get();
         client.close();
         return resp.getBody().toMap();
+    }
+
+    @Override
+    public List<ListMemoryNodesResponseBody.MemoryNodes> listMemoryNodes(String workspaceId, String memoryId, int length, String nextToken) throws Exception {
+        if (length > 50) {
+            length = 50;
+        }
+
+        AsyncClient client = getAsyncClient();
+
+        ListMemoryNodesRequest listMemoryNodesRequest = ListMemoryNodesRequest.builder()
+                .workspaceId(workspaceId)
+                .memoryId(memoryId)
+                .maxResults(length)
+                .nextToken(nextToken)
+                .build();
+
+        CompletableFuture<ListMemoryNodesResponse> response = client.listMemoryNodes(listMemoryNodesRequest);
+        ListMemoryNodesResponse resp = response.get();
+        client.close();
+
+        return resp.getBody().getMemoryNodes();
     }
 
     @Override

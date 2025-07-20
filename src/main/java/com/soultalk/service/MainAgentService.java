@@ -1,5 +1,6 @@
 package com.soultalk.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.soultalk.po.MainDiaPO;
 import io.reactivex.Flowable;
 
@@ -34,6 +35,9 @@ public interface MainAgentService {
     //获取长期记忆ID
     String getMemoryId(Long userId);
 
+    //获取长期记忆片段
+    JSONObject listMemoryNodes(Long userId);
+
     //重置长期记忆
-    void resetMemory(Long userId);
+    String resetMemory(Long userId);
 }

@@ -119,7 +119,8 @@ public class UserController {
      */
     @GetMapping("/detail/info")
     public R getDetailInfo() {
-        UserInfoPO userInfo = userService.getDetailInfo();
+        Long userId = Long.parseLong(BaseContext.getCurrentId());
+        UserInfoPO userInfo = userService.getDetailInfo(userId);
         return R.Success(userInfo);
     }
 
