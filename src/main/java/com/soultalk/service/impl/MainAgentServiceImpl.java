@@ -1,5 +1,6 @@
 package com.soultalk.service.impl;
 
+import com.alibaba.dashscope.app.ApplicationOutput;
 import com.alibaba.dashscope.exception.InputRequiredException;
 import com.alibaba.dashscope.exception.NoApiKeyException;
 import com.alibaba.fastjson.JSON;
@@ -116,6 +117,7 @@ public class MainAgentServiceImpl implements MainAgentService {
         StringBuilder sendSb = new StringBuilder();
         StringBuilder buffer = new StringBuilder();
         AtomicBoolean lock = new AtomicBoolean(false);//锁定是否处理json
+        AtomicBoolean isFinish = new AtomicBoolean(false);
 
         // 2. 创建String流
         return Flowable.create(flowEmitter -> {
@@ -130,70 +132,87 @@ public class MainAgentServiceImpl implements MainAgentService {
                         .subscribeOn(Schedulers.io())  // 在IO线程处理
                         .subscribe(
                                 message -> {
-                                    if (message.getOutput().getText() != null && !message.getOutput().getSessionId().equals(userPO.getSessionId())) {
-                                        userPO.setSessionId(message.getOutput().getSessionId());
+                                    final ApplicationOutput output = message.getOutput();
+
+                                    //校验切换session
+                                    if (output.getText() != null && !output.getSessionId().equals(userPO.getSessionId())) {
+                                        userPO.setSessionId(output.getSessionId());
                                         userMapper.update(userPO);
                                     }
 
-                                    String content = message.getOutput().getText();
+                                    // 校验内容
+                                    String content = output.getText();
+                                    if (content == null) {
+                                        return;
+                                    }
 
-                                    //处理只返回response
-                                    if (!lock.get() && getSb.toString().contains("\"response\":\"")) {
+                                    getSb.append(content);
+
+                                    // 监测开始头
+                                    final String getContent = getSb.toString();
+                                    if (!lock.get() && getContent.contains("\"response\":\"")) {
                                         lock.set(true);
 
-                                        getSb.append(content);
-                                        int index = getSb.toString().indexOf("\"response\":\"") + 12;
-                                        String text = getSb.substring(index, getSb.length());
-
-                                        //发送
-                                        if (!text.isEmpty()) {
-                                            flowEmitter.onNext(text);
-                                            sendSb.append(text);
+                                        int startIndex = getContent.indexOf("\"response\":\"") + 12;
+                                        if (startIndex < getContent.length()) {
+                                            String response = getContent.substring(startIndex);
+                                            flowEmitter.onNext(response);
+                                            sendSb.append(response);
                                         }
                                         return;
                                     }
 
-                                    if (lock.get() && content != null && !content.isEmpty()) {
-                                        //处理换行转义
-                                        StringBuilder contentSb = new StringBuilder();
-
-                                        //获取历史1个char
-                                        if (!buffer.isEmpty()) {
-                                            contentSb.append(buffer.charAt(buffer.length() - 1));
-                                        }
-                                        contentSb.append(content);
-
-                                        //转义
-                                        content = contentSb.toString()
-                                                .replace("\\n", "\\\\n")  // 替换字面"\n"为"\\n"
-                                                .replace("\n", "\\\\n"); // 替换LF字符为"\\n"
-
-                                        //删除历史的1个char
-                                        if (!buffer.isEmpty()) {
-                                            content = content.substring(1);
-                                        }
-
-                                        // 先加入缓存
-                                        buffer.append(content);
-
-                                        //get池中加入
-                                        getSb.append(content);
-
-                                        // 当缓存长度 ≥4 时，处理可判定的字符
-                                        while (buffer.length() > 4) {
-                                            int safeLen = buffer.length() - 4; // 除最后4字符外的长度
-
-                                            // 安全内容
-                                            flowEmitter.onNext(buffer.substring(0, safeLen));
-                                            sendSb.append(buffer, 0, safeLen);
-
-                                            buffer.delete(0, safeLen); // 保留最后字符继续匹配
-                                        }
-
+                                    // 非response内容检查
+                                    if (!lock.get()) {
+                                        return;
                                     }
 
-                                    //get池中加入
-                                    getSb.append(content);
+                                    //转义
+                                    if (buffer.isEmpty()) {
+                                        content = content
+                                                .replace("\\n", "\\\\n")
+                                                .replace("\n", "\\\\n");
+                                    } else {
+                                        char lastChar = buffer.charAt(buffer.length() - 1);
+                                        content = (lastChar + content)
+                                                .replace("\\n", "\\\\n")
+                                                .replace("\n", "\\\\n")
+                                                .substring(1);
+                                    }
+
+                                    //提前跳出发送流程
+                                    if (isFinish.get()) {
+                                        return;
+                                    }
+
+                                    buffer.append(content);
+
+                                    // 结束标记检测
+                                    final int endMarkIndex = buffer.indexOf("\",\"emo");
+                                    if (endMarkIndex != -1) {
+                                        String remaining = buffer.substring(0, endMarkIndex);
+                                        if (!remaining.isEmpty()) {
+                                            flowEmitter.onNext(remaining);
+                                            sendSb.append(remaining);
+                                        }
+
+                                        isFinish.set(true);
+                                        return;
+                                    }
+
+                                    // 滑动窗口
+                                    if (buffer.length() > 7) {
+                                        int safeLen = buffer.length() - 7;
+                                        String safePart = buffer.substring(0, safeLen);
+
+                                        //发送
+                                        if (!safePart.isEmpty()) {
+                                            flowEmitter.onNext(safePart);
+                                            sendSb.append(safePart);
+                                        }
+
+                                        buffer.delete(0, safeLen);
+                                    }
 
                                 },
 
@@ -202,21 +221,10 @@ public class MainAgentServiceImpl implements MainAgentService {
                                     log.error(error.getMessage());
                                 },
                                 () -> {
-                                    // 检查缓存
-                                    if (buffer.length() >= 4 && buffer.toString().contains("\"}")) {
-                                        int index = buffer.indexOf("\"}");
-                                        buffer.setLength(index); // 直接丢弃结尾的 "}
-                                    }
-                                    //最后一包
-                                    if (!buffer.isEmpty()) {
-                                        flowEmitter.onNext(buffer.toString()); // 追加剩余缓存
-                                        sendSb.append(buffer);
-                                    }
-
                                     flowEmitter.onComplete();
 
                                     //获取情绪分数等
-                                    UserEmotionRecordPO record = new UserEmotionRecordPO(null, userId, "无效情绪", null, question, 0, LocalDateTime.now());
+                                    UserEmotionRecordPO record = new UserEmotionRecordPO(null, userId, null, null, question, 0, LocalDateTime.now());
                                     try {
                                         //切割出JSON
                                         int l = getSb.indexOf("{");
@@ -225,9 +233,8 @@ public class MainAgentServiceImpl implements MainAgentService {
                                         String emotion = (String) json.getOrDefault("emotion", "无效情绪");
                                         record.setEmotion(emotion);
 
-
-                                        String score = (String) json.getOrDefault("score", "5");
-                                        record.setScore(new BigDecimal(score));
+                                        BigDecimal score = (BigDecimal) json.getOrDefault("score", "5");
+                                        record.setScore(score);
 
                                         String response = (String) json.getOrDefault("response", "");
                                         record.setStatus(response.isEmpty() ? 0 : 1);
@@ -377,8 +384,10 @@ public class MainAgentServiceImpl implements MainAgentService {
             List<ListMemoryNodesResponseBody.MemoryNodes> list = mainAgent.listMemoryNodes(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), 50, null);
             int i = 0;
             for (ListMemoryNodesResponseBody.MemoryNodes memoryNodes : list) {
-                json.put(i + "0", memoryNodes.getMemoryNodeId());
-                json.put(i + "1", memoryNodes.getContent());
+                JSONObject j = new JSONObject();
+                j.put("id", memoryNodes.getMemoryNodeId());
+                j.put("content", memoryNodes.getContent());
+                json.put(i + "", j);
                 i++;
             }
         } catch (Exception e) {

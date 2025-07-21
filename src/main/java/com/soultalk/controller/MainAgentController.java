@@ -230,8 +230,13 @@ public class MainAgentController {
         }
     }
 
-    @GetMapping("/uploadInfo")
-    public R uploadInfo() {
+    /**
+     * 同步用户信息到大模型长期记忆
+     *
+     * @return
+     */
+    @GetMapping("/refreshInfo")
+    public R refreshInfo() {
         Long userId = Long.parseLong(BaseContext.getCurrentId());
         UserInfoPO userInfoPO = userService.getDetailInfo(userId);
 

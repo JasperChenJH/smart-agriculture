@@ -18,10 +18,8 @@ import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,6 +51,10 @@ public class MainAgentSource implements MainAgent {
 
     @Override
     public Flowable<ApplicationResult> streamAppCall(String appKey, String memoryId, String sessionId, String question) throws NoApiKeyException, InputRequiredException {
+        //带上时间戳
+        SimpleDateFormat sdf24 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        question = "[当前时间 " + sdf24.format(new Date()) + "] " + question;
+
         //调用API
         ApplicationParam param = ApplicationParam.builder()
                 .apiKey(Configs.DASHSCOPE_API_KEY)
