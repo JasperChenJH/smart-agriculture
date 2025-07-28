@@ -1,6 +1,7 @@
 package com.soultalk.service;
 
 import com.alibaba.fastjson.JSONObject;
+import com.soultalk.controller.request.R;
 import com.soultalk.po.MainDiaPO;
 import io.reactivex.Flowable;
 
@@ -40,4 +41,7 @@ public interface MainAgentService {
 
     //重置长期记忆
     String resetMemory(Long userId);
+
+    //上传用户信息到长期记忆
+    R uploadInfoToMemory(Long userId);
 }

@@ -37,6 +37,9 @@ public interface MainAgent {
     //清空长期记忆体（返回新ID）
     String clearMemory(String workspaceId, String memoryId) throws Exception;
 
+    //删除记忆片段
+    void removeMemoryNode(String workspaceId, String memoryId, String memoryNodeId) throws Exception;
+
     //列出所有长期记忆（workspace，单页个数，上次返回的token（引用））
     List<Map<String, String>> listMemory(String workspaceId, Integer depart, String[] nextToken) throws Exception;
 

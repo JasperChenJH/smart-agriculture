@@ -8,10 +8,12 @@ import com.alibaba.fastjson.JSONObject;
 import com.aliyun.sdk.service.bailian20231229.models.ListMemoryNodesResponseBody;
 import com.soultalk.aigc.MainAgent;
 import com.soultalk.config.Configs;
+import com.soultalk.controller.request.R;
 import com.soultalk.mapper.MainDiaMapper;
 import com.soultalk.mapper.UserMapper;
 import com.soultalk.po.MainDiaPO;
 import com.soultalk.po.UserEmotionRecordPO;
+import com.soultalk.po.UserInfoPO;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.MainAgentService;
 import com.soultalk.service.UserService;
@@ -116,7 +118,7 @@ public class MainAgentServiceImpl implements MainAgentService {
         StringBuilder getSb = new StringBuilder();
         StringBuilder sendSb = new StringBuilder();
         StringBuilder buffer = new StringBuilder();
-        AtomicBoolean lock = new AtomicBoolean(false);//锁定是否处理json
+        AtomicBoolean lock = new AtomicBoolean(false); // 锁定是否处理json
         AtomicBoolean isFinish = new AtomicBoolean(false);
 
         // 2. 创建String流
@@ -410,6 +412,49 @@ public class MainAgentServiceImpl implements MainAgentService {
             log.error(e.getMessage());
             return null;
         }
+    }
+
+    @Override
+    public R uploadInfoToMemory(Long userId) {
+        UserInfoPO userInfoPO = userService.getDetailInfo(userId);
+        UserPO userPO = userMapper.selectById(userId);
+
+        //校验
+        if (userInfoPO == null) {
+            return R.Failed("未找到该ID");
+        }
+
+        JSONObject json = new JSONObject();
+        json.put("昵称", userInfoPO.getNickName());
+        json.put("性别", "1".equals(userInfoPO.getSex()) ? "男" : "女");
+        json.put("出生日期", userInfoPO.getBirthday());
+        json.put("年龄", userInfoPO.getAge());
+        json.put("星座", userInfoPO.getZodiac());
+        json.put("MBTI人格类型", userInfoPO.getPersonalityType());
+        json.put("居住地址", userInfoPO.getCountry() + " " + userInfoPO.getProvince() + " " + userInfoPO.getCity());
+        json.put("兴趣爱好", userInfoPO.getHobbies());
+
+        String content = "记住用户的个人信息：" + json;
+
+        try {
+            //校验nodeId是否存在
+            if (userPO.getMemoryInfoId() != null && !userPO.getMemoryInfoId().isEmpty()) {
+                mainAgent.removeMemoryNode(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), userPO.getMemoryInfoId());
+            }
+
+            //写入新nodeId
+            String newNodeId = mainAgent.createMemoryNode(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), content);
+            userPO.setMemoryInfoId(newNodeId);
+
+            //回写数据库
+            userMapper.update(userPO);
+
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return R.Failed(e.getMessage());
+        }
+
+        return R.Success("已同步个人预设到大模型");
     }
 
     private record Params(String api, String memoryId, String sessionId) {

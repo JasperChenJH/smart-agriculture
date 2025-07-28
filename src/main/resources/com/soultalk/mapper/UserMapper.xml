@@ -14,6 +14,9 @@
             <if test="memoryId != null">
                 memory_id = #{memoryId},
             </if>
+            <if test="memoryInfoId != null">
+                memory_info_id = #{memoryInfoId},
+            </if>
             <if test="sessionId != null">
                 session_id = #{sessionId},
             </if>
@@ -32,6 +35,11 @@
     <update id="setMemoryIdToId">
         update soultalk.user
         set memory_id = #{memoryId}
+        where id = #{id}
+    </update>
+    <update id="setMemoryInfoIdToId">
+        update soultalk.user
+        set memory_info_id = #{memoryInfoId}
         where id = #{id}
     </update>
     <delete id="deleteById">

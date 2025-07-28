@@ -333,6 +333,20 @@ public class MainAgentSource implements MainAgent {
     }
 
     @Override
+    public void removeMemoryNode(String workspaceId, String memoryId, String memoryNodeId) throws Exception {
+        AsyncClient client = getAsyncClient();
+
+        DeleteMemoryNodeRequest deleteMemoryNodeRequest = DeleteMemoryNodeRequest.builder()
+                .workspaceId(workspaceId)
+                .memoryId(memoryId)
+                .memoryNodeId(memoryNodeId)
+                .build();
+
+        CompletableFuture<DeleteMemoryNodeResponse> response = client.deleteMemoryNode(deleteMemoryNodeRequest);
+        DeleteMemoryNodeResponse resp = response.get();
+    }
+
+    @Override
     public List<Map<String, String>> listMemory(String workspaceId, Integer depart, String[] nextToken) throws Exception {
         if (nextToken == null || nextToken.length != 1) {
             throw new Exception("nextToken长度为1并为数组");
