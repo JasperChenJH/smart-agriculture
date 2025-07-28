@@ -18,7 +18,8 @@
             hobbies          = #{hobbies},
             country          = #{country},
             province         = #{province},
-            city             = #{city}
+            city             = #{city},
+            medical_history  = #{medicalHistory}
         where user_id = #{userId}
     </update>
     <delete id="deleteByUserId">

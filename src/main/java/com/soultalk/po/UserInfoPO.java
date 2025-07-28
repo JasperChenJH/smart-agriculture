@@ -1,5 +1,6 @@
 package com.soultalk.po;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -34,7 +35,7 @@ public class UserInfoPO {
     /**
      * 出生日期
      */
-
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthday;
 
     /**
@@ -81,4 +82,10 @@ public class UserInfoPO {
      * 修改时间 自动设置不必修改
      */
     private Date updateTime;
+
+    /**
+     * 过往病史
+     */
+    private String medicalHistory;
+
 }

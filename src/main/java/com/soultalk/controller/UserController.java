@@ -5,7 +5,9 @@ import com.soultalk.controller.request.R;
 import com.soultalk.po.PageResult;
 import com.soultalk.po.UserEmotionRecordPO;
 import com.soultalk.po.UserInfoPO;
+import com.soultalk.service.MainAgentService;
 import com.soultalk.service.UserService;
+import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +22,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/user")
 public class UserController {
+    @Resource
+    private MainAgentService mainAgentService;
     @Autowired
     private UserService userService;
 

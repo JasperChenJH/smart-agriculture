@@ -9,6 +9,7 @@ import com.soultalk.po.UserEmotionRecordPO;
 import com.soultalk.po.UserInfoPO;
 import com.soultalk.po.UserPO;
 import com.soultalk.service.BaseService;
+import com.soultalk.service.MainAgentService;
 import com.soultalk.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,8 @@ import java.util.List;
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
+    @Resource
+    private MainAgentService mainAgentService;
     @Resource
     MainDiaMapper mainDiaMapper;
     @Autowired
@@ -75,6 +78,7 @@ public class UserServiceImpl implements UserService {
     public void updateDetailInfo(UserInfoPO userInfo) {
         Long userId = Long.valueOf(BaseContext.getCurrentId());
         userInfo.setUserId(userId);
+        mainAgentService.uploadInfoToMemory(userId);
         userInfoMapper.updateDetailInfo(userInfo);
     }
 

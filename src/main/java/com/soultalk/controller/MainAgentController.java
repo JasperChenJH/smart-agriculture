@@ -45,7 +45,6 @@ public class MainAgentController {
             if (diaId == null) {
                 throw new Exception("初始化对话失败");
             }
-
             return R.Success(diaId + " 已创建");
         } catch (Exception e) {
             log.error(e.getMessage());

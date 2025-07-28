@@ -25,6 +25,7 @@ import io.reactivex.schedulers.Schedulers;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -39,7 +40,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MainAgentServiceImpl implements MainAgentService {
     @Resource
     private MainAgent agentSource;
-    @Autowired
+    @Lazy  // 延迟注入
+    @Resource
     private UserService userService;
     @Autowired
     private MainDiaMapper mainDiaMapper;
@@ -433,9 +435,9 @@ public class MainAgentServiceImpl implements MainAgentService {
         json.put("MBTI人格类型", userInfoPO.getPersonalityType());
         json.put("居住地址", userInfoPO.getCountry() + " " + userInfoPO.getProvince() + " " + userInfoPO.getCity());
         json.put("兴趣爱好", userInfoPO.getHobbies());
-
+        json.put("个人病史", userInfoPO.getMedicalHistory());
+        json.put("个人简介", userPO.getIntroduce());
         String content = "记住用户的个人信息：" + json;
-
         try {
             //校验nodeId是否存在
             if (userPO.getMemoryInfoId() != null && !userPO.getMemoryInfoId().isEmpty()) {

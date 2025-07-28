@@ -24,7 +24,9 @@ public class SpeechSource implements Speech {
     @Override
     public String fileCall(String filePath) throws UnsupportedAudioFileException, IOException {
         File file = new File(filePath);
-        if (!file.exists()) return null;
+        if (!file.exists()) {
+            return null;
+        }
 
         //解析采样率
         int sampleRate = 16000;
