@@ -78,8 +78,10 @@ public class UserServiceImpl implements UserService {
     public void updateDetailInfo(UserInfoPO userInfo) {
         Long userId = Long.valueOf(BaseContext.getCurrentId());
         userInfo.setUserId(userId);
-        mainAgentService.uploadInfoToMemory(userId);
+        // 先跟新信息再上传
         userInfoMapper.updateDetailInfo(userInfo);
+        mainAgentService.uploadInfoToMemory(userId);
+
     }
 
     @Override
@@ -143,6 +145,7 @@ public class UserServiceImpl implements UserService {
             }
         }
         userMapper.update(user);
+        mainAgentService.uploadInfoToMemory(userId);
     }
 
     @Transactional
