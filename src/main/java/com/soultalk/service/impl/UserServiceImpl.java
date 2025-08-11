@@ -137,8 +137,10 @@ public class UserServiceImpl implements UserService {
         Long userId = Long.valueOf(BaseContext.getCurrentId());
         UserPO user = new UserPO();
         user.setId(userId);
-        user.setIntroduce(introduce);
-        if (!photo.isEmpty()) {
+        if (introduce!=null &&!introduce.isEmpty()){
+            user.setIntroduce(introduce);
+        }
+        if (photo!=null&&!photo.isEmpty()) {
             String url = baseService.saveFileToOSS(photo.getOriginalFilename(), photo);
             if (url != null) {
                 user.setPhoto(url);

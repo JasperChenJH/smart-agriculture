@@ -75,16 +75,24 @@ public class UserController {
     */
 
     /**
-     * 修改用户基本信息
-     *
-     * @param introduce 自我简介
-     * @param photo     用户头像
+     * 上传或修改图片
+     * @param photo 图片
      * @return
      */
-    @PostMapping("/updateBaseInfo")
-    public R updateBaseInfo(@RequestParam("introduce") String introduce,
-                            @RequestParam("photo") MultipartFile photo) {
-        userService.updateBaseInfo(introduce, photo);
+    @PostMapping("/updatePhoto")
+    public R updatePhoto(@RequestParam("photo") MultipartFile photo){
+        userService.updateBaseInfo(null,photo);
+        return R.Success("修改成功");
+    }
+
+    /**
+     *  上传或修改用户简介
+     * @param introduce 用户简介
+     * @return
+     */
+    @PostMapping("/updateIntroduce")
+    public R updateIntroduce(@RequestParam("introduce") String introduce){
+        userService.updateBaseInfo(introduce,null);
         return R.Success("修改成功");
     }
 
