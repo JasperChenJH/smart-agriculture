@@ -36,7 +36,7 @@ public class BaseServiceImpl implements BaseService {
         clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
         OSS ossClient = OSSClientBuilder.create()
                 .endpoint(OSS_ENDPOINT)
-                .credentialsProvider(new DefaultCredentialProvider(Ali_ACCESSKEY_ID, Ali_ACCESSKEY_SECRET))
+                .credentialsProvider(new DefaultCredentialProvider(ALI_ACCESSKEY_ID, ALI_ACCESSKEY_SECRET))
                 .clientConfiguration(clientBuilderConfiguration)
                 .region(OSS_REGION)
                 .build();
@@ -80,7 +80,7 @@ public class BaseServiceImpl implements BaseService {
         clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
         OSS ossClient = OSSClientBuilder.create()
                 .endpoint(endpoint)
-                .credentialsProvider(new DefaultCredentialProvider(Ali_ACCESSKEY_ID, Ali_ACCESSKEY_SECRET))
+                .credentialsProvider(new DefaultCredentialProvider(ALI_ACCESSKEY_ID, ALI_ACCESSKEY_SECRET))
                 .clientConfiguration(clientBuilderConfiguration)
                 .region(region)
                 .build();

@@ -10,6 +10,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -57,7 +58,23 @@ public class AudioServiceImpl implements AudioService {
 
     @Override
     public void uploadData(String id, byte[] audioData) {
-        if (audioData.length == 0) return;
+        // 检测音频数据
+        if (audioData.length == 0) {
+            return;
+        }
+        //是否全为空
+        boolean allZeros = true;
+        for (byte audioDatum : audioData) {
+            if (audioDatum != 0) {
+                allZeros = false;
+                break;
+            }
+        }
+        if (allZeros) {
+            return;
+        }
+
+
         SessionState session = sessionStates.get(id);
         if (session == null) {
             return;
@@ -114,30 +131,40 @@ public class AudioServiceImpl implements AudioService {
 
     private void startRecognition(String sessionId, int sampleRate) throws NoApiKeyException {
         SessionState session = sessionStates.get(sessionId);
-        if (session == null || session.completed) return;
+        if (session == null || session.completed) {
+            return;
+        }
 
-        Flowable<ByteBuffer> audioSource = Flowable.create(
-                emitter -> {
-                    synchronized (session) {
-                        session.rxEmitter = emitter;
-                        // Flush buffered data
-                        while (!session.audioBufferQueue.isEmpty()) {
-                            ByteBuffer buffered = session.audioBufferQueue.poll();
-                            if (buffered != null) emitter.onNext(buffered);
+        try {
+            Flowable<ByteBuffer> audioSource = Flowable.create(
+                    emitter -> {
+                        synchronized (session) {
+                            session.rxEmitter = emitter;
+                            //buffered data
+                            while (!session.audioBufferQueue.isEmpty()) {
+                                ByteBuffer buffered = session.audioBufferQueue.poll();
+                                if (buffered != null) emitter.onNext(buffered);
+                            }
                         }
-                    }
-                },
-                BackpressureStrategy.BUFFER
-        );
+                    },
+                    BackpressureStrategy.BUFFER
+            );
 
-        speech.streamCall(audioSource, "pcm", sampleRate)
-                .blockingForEach(result -> {
-                    sendRecognitionResult(sessionId,
-                            result.getSentence().getText(),
-                            result.isSentenceEnd());
-                });
-
-        completeSession(sessionId);
+            speech.streamCall(audioSource, "pcm", sampleRate)
+                    .blockingForEach(result -> {
+                        // 检查会话是否已关闭
+                        if (sessionStates.containsKey(sessionId) && !session.completed) {
+                            sendRecognitionResult(sessionId, result.getSentence().getText(), result.isSentenceEnd());
+                        }
+                    });
+        } catch (Exception e) {
+            if (sessionStates.containsKey(sessionId) && !e.getMessage().contains("closed")) {
+                log.error("Recognition error", e);
+            }
+        } finally {
+            // 确保最终清理
+            completeSession(sessionId);
+        }
     }
 
     private void sendRecognitionResult(String sessionId, String text, boolean isFinal) {
@@ -156,20 +183,33 @@ public class AudioServiceImpl implements AudioService {
     @Override
     public void completeSession(String sessionId) {
         SessionState session = sessionStates.get(sessionId);
-        if (session == null) return;
+        if (session == null) {
+            return;
+        }
 
         synchronized (session) {
+            // 防止重复清理
+            if (session.completed) {
+                return;
+            }
+
             session.completed = true;
+
+            // 关闭RxJava流
             if (session.rxEmitter != null && !session.rxEmitter.isCancelled()) {
                 session.rxEmitter.onComplete();
             }
+
+            // 移除会话前检查WebSocket状态
             if (session.webSocketSession != null && session.webSocketSession.isOpen()) {
                 try {
-                    session.webSocketSession.close();
+                    session.webSocketSession.close(CloseStatus.NORMAL);
                 } catch (IOException e) {
-                    log.error("Error closing WebSocket session", e);
+                    log.warn("Error closing WebSocket session: {}", e.getMessage());
                 }
             }
+
+            // 确保移除
             sessionStates.remove(sessionId);
         }
     }

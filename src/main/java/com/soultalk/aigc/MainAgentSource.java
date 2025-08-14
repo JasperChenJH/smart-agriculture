@@ -32,8 +32,8 @@ public class MainAgentSource implements MainAgent {
     private static AsyncClient getAsyncClient() {
         StaticCredentialProvider provider = StaticCredentialProvider.create(Credential.builder()
                 //OSS的密钥通用
-                .accessKeyId(Configs.Ali_ACCESSKEY_ID)
-                .accessKeySecret(Configs.Ali_ACCESSKEY_SECRET)
+                .accessKeyId(Configs.ALI_ACCESSKEY_ID)
+                .accessKeySecret(Configs.ALI_ACCESSKEY_SECRET)
                 .build());
 
         AsyncClient client = AsyncClient.builder()

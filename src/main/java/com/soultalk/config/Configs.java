@@ -5,13 +5,16 @@ public class Configs {
     public static final String JWT_SECRET_KEY = "soul";
 
     //阿里云平台
-    public static final String Ali_ACCESSKEY_ID = "LTAI5tMu5NAHEDQgn3eB7xEW";
-    public static final String Ali_ACCESSKEY_SECRET = "qpNr4BSBLEc1T1vvlE6nXhD1yPpm3d";
+    public static final String ALI_ACCESSKEY_ID = "LTAI5tMu5NAHEDQgn3eB7xEW";
+    public static final String ALI_ACCESSKEY_SECRET = "qpNr4BSBLEc1T1vvlE6nXhD1yPpm3d";
     public static final String ALI_WORKSPACE_ID = "llm-3etxahx4rzj1zwuk";
+
+    //阿里tts
+    public static final String ALI_TTS_APP_KEY = "WYU3Vd5JAsMvvaN9";
 
     //OSS
     public static final String OSS_ENDPOINT = "oss-cn-chengdu.aliyuncs.com";
-    public static final String OSS_BUCKET = "ai-soul"; // 填写Bucket名称，例如examplebucket。
+    public static final String OSS_BUCKET = "ai-soul"; // 填写Bucket名称
     public static final String OSS_REGION = "cn-chengdu";// 填写Bucket所在地域
 
     //通义API Key

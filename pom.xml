@@ -103,6 +103,12 @@
 			<artifactId>alibabacloud-bailian20231229</artifactId>
 			<version>2.0.8</version>
 		</dependency>
+<!--		阿里云tts语音合成-->
+		<dependency>
+			<groupId>com.alibaba.nls</groupId>
+			<artifactId>nls-sdk-tts</artifactId>
+			<version>2.2.19</version>
+		</dependency>
 <!--		分页查询插件-->
 		<dependency>
 			<groupId>com.github.pagehelper</groupId>

@@ -26,9 +26,9 @@ import java.util.List;
 @Slf4j
 public class UserServiceImpl implements UserService {
     @Resource
-    private MainAgentService mainAgentService;
-    @Resource
     MainDiaMapper mainDiaMapper;
+    @Resource
+    private MainAgentService mainAgentService;
     @Autowired
     private BaseService baseService;
     @Autowired
@@ -137,10 +137,10 @@ public class UserServiceImpl implements UserService {
         Long userId = Long.valueOf(BaseContext.getCurrentId());
         UserPO user = new UserPO();
         user.setId(userId);
-        if (introduce!=null &&!introduce.isEmpty()){
+        if (introduce != null && !introduce.isEmpty()) {
             user.setIntroduce(introduce);
         }
-        if (photo!=null&&!photo.isEmpty()) {
+        if (photo != null && !photo.isEmpty()) {
             String url = baseService.saveFileToOSS(photo.getOriginalFilename(), photo);
             if (url != null) {
                 user.setPhoto(url);

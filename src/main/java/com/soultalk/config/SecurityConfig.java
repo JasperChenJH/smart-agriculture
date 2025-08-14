@@ -28,8 +28,7 @@ public class SecurityConfig {
             "/auth/register",
             "/auth/resetPassword",
             "/dia/streamQuestion",
-            "/main/ask",
-            "/ws/speech"
+            "/main/ask"
     };
 
     @Autowired
@@ -54,14 +53,23 @@ public class SecurityConfig {
                 )
                 // 4. 设置访问控制规则
                 .authorizeHttpRequests(auth -> auth
-                        // 允许OPTIONS预检请求（重要）
+                        // 允许OPTIONS预检请求
                         .requestMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
 
-                        // 4.1 开放白名单路径
+                        // 0.开放websocket
+                        .requestMatchers("/ws/**")
+                        .permitAll()
+
+                        // 1.开放静态资源路径
+                        .requestMatchers("/resources/**")
+                        .permitAll()
+
+                        // 2.开放白名单路径
                         .requestMatchers(EXCLUDE_URLS)
                         .permitAll()
-                        // 4.2 保护其他所有路径
+
+                        // 保护其他所有路径
                         .anyRequest().authenticated()
                 )
                 // 5. 注入 JWT 认证过滤器

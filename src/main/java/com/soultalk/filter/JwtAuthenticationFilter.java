@@ -30,8 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final List<String> JWT_EXCLUDED = Arrays.asList(
             "/auth/login",
             "/auth/register",
-            "/auth/resetPassword",
-            "/ws/speech"
+            "/auth/resetPassword"
     );
     @Autowired
     private UserMapper userMapper;
@@ -51,7 +50,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String requestURI = request.getRequestURI();
 
             // WebSocket 请求直接放行
-            if (requestURI.startsWith("/ws/") || "/ws".equals(requestURI)) {
+            if (requestURI.startsWith("/ws/")) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            //静态资源 直接放行
+            if (requestURI.startsWith("/resources/")) {
                 filterChain.doFilter(request, response);
                 return;
             }
