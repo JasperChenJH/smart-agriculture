@@ -171,17 +171,19 @@ public class AuthServiceImpl implements AuthService {
         weChatLoginPO.setSessionKey(sessionKey);
         //判断是否为新用户
         UserPO user = userMapper.getByOpenId(openid);
-        UserPO newUser = new UserPO();
         if (user==null){
+            UserPO newUser = new UserPO();
             newUser.setOpenId(openid);
             newUser.setTime(System.currentTimeMillis());
             userMapper.insert(newUser);
             String token = JwtUtils.generateToken(newUser.getId());
             weChatLoginPO.setToken(token);
+            weChatLoginPO.setIsOldUser(0);
             return weChatLoginPO;
         }
         String token = JwtUtils.generateToken(user.getId());
         weChatLoginPO.setToken(token);
+        weChatLoginPO.setIsOldUser(1);
         return weChatLoginPO;
     }
 }
