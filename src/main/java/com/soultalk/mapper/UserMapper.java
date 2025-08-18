@@ -22,4 +22,6 @@ public interface UserMapper {
     void update(UserPO user);
 
     void deleteById(Long id);
+
+    UserPO getByOpenId(String openid);
 }
