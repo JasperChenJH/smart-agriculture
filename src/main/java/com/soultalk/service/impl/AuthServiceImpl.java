@@ -87,14 +87,6 @@ public class AuthServiceImpl implements AuthService {
         UserInfoPO userInfo = new UserInfoPO();
         userInfo.setUserId(user.getId());
         userInfoMapper.insertDetailInfo(userInfo);
-
-        // 添加用户情感表
-        UserEmotionRecordPO userEmotionRecord = new UserEmotionRecordPO();
-        userEmotionRecord.setUserId(user.getId());
-        userEmotionRecord.setStatus(0);
-        userEmotionRecord.setEmotion("无效情绪");
-        userEmotionRecord.setScore(BigDecimal.valueOf(0.0f));
-        userEmotionRecordMapper.insert(userEmotionRecord);
         return ResponseEntity.ok("注册成功");
     }
 
@@ -138,7 +130,7 @@ public class AuthServiceImpl implements AuthService {
 
         userMapper.update(user);
     }
-
+    @Transactional
     @Override
     public WeChatLoginPO wechatLogin(String code) {
         // 获得当前用户的openId 通过 HttpClient向微信发送请求
@@ -179,6 +171,17 @@ public class AuthServiceImpl implements AuthService {
             String token = JwtUtils.generateToken(newUser.getId());
             weChatLoginPO.setToken(token);
             weChatLoginPO.setIsOldUser(0);
+            //创建memory_id
+            try {
+                String memoryId = mainAgent.createMemoryId(Configs.ALI_WORKSPACE_ID, "用户:" + user.getId());
+                userMapper.setMemoryIdToId(user.getId(), memoryId);
+            } catch (Exception e) {
+                log.error(e.getMessage());
+            }
+            //注册之后添加用户详细详细表
+            UserInfoPO userInfo = new UserInfoPO();
+            userInfo.setUserId(user.getId());
+            userInfoMapper.insertDetailInfo(userInfo);
             return weChatLoginPO;
         }
         String token = JwtUtils.generateToken(user.getId());
