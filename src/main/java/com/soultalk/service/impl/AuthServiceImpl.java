@@ -173,14 +173,14 @@ public class AuthServiceImpl implements AuthService {
             weChatLoginPO.setIsOldUser(0);
             //创建memory_id
             try {
-                String memoryId = mainAgent.createMemoryId(Configs.ALI_WORKSPACE_ID, "用户:" + user.getId());
-                userMapper.setMemoryIdToId(user.getId(), memoryId);
+                String memoryId = mainAgent.createMemoryId(Configs.ALI_WORKSPACE_ID, "用户:" + newUser.getId());
+                userMapper.setMemoryIdToId(newUser.getId(), memoryId);
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
             //注册之后添加用户详细详细表
             UserInfoPO userInfo = new UserInfoPO();
-            userInfo.setUserId(user.getId());
+            userInfo.setUserId(newUser.getId());
             userInfoMapper.insertDetailInfo(userInfo);
             return weChatLoginPO;
         }
