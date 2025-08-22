@@ -76,16 +76,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // 验证并解析 JWT
                     DecodedJWT decodedJWT = JwtUtils.verifyToken(token);
                     Long userId = Long.parseLong(decodedJWT.getSubject());
-                    Long jwtTimeStamp = decodedJWT.getIssuedAt().getTime();
-                    Long pwdTimeStamp = userMapper.getTimeById(userId);
-
-                    //校验jwt生成时间和密码设定时间
-                    if (pwdTimeStamp > jwtTimeStamp) {
-                        response.setCharacterEncoding("utf-8");//中文
-                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                        response.getWriter().write("过期的JWT令牌");
-                        return;
-                    }
+//                    Long jwtTimeStamp = decodedJWT.getIssuedAt().getTime();
+//                    Long pwdTimeStamp = userMapper.getTimeById(userId);
+//
+//                    //校验jwt生成时间和密码设定时间
+//                    if (pwdTimeStamp > jwtTimeStamp) {
+//                        response.setCharacterEncoding("utf-8");//中文
+//                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                        response.getWriter().write("过期的JWT令牌");
+//                        return;
+//                    }
 
                     // 解析JWT 设置用户 ID
                     BaseContext.setCurrentId(userId);
