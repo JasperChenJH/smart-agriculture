@@ -385,7 +385,7 @@ public class MainAgentServiceImpl implements MainAgentService {
 
         try {
             UserPO userPO = userMapper.selectById(userId);
-            List<ListMemoryNodesResponseBody.MemoryNodes> list = mainAgent.listMemoryNodes(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), 50, null);
+            List<ListMemoryNodesResponseBody.MemoryNodes> list = mainAgent.listMemoryNodes(Configs.ALI_WORKSPACE_ID,userPO.getMemoryId(), 50, null);
             int i = 0;
             for (ListMemoryNodesResponseBody.MemoryNodes memoryNodes : list) {
                 JSONObject j = new JSONObject();
