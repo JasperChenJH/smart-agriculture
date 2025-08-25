@@ -385,7 +385,7 @@ public class MainAgentServiceImpl implements MainAgentService {
 
         try {
             UserPO userPO = userMapper.selectById(userId);
-            List<ListMemoryNodesResponseBody.MemoryNodes> list = mainAgent.listMemoryNodes(Configs.ALI_WORKSPACE_ID,userPO.getMemoryId(), 50, null);
+            List<ListMemoryNodesResponseBody.MemoryNodes> list = mainAgent.listMemoryNodes(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), 50, null);
             int i = 0;
             for (ListMemoryNodesResponseBody.MemoryNodes memoryNodes : list) {
                 JSONObject j = new JSONObject();
@@ -426,37 +426,67 @@ public class MainAgentServiceImpl implements MainAgentService {
             return R.Failed("未找到该ID");
         }
 
-        JSONObject json = new JSONObject();
-        json.put("昵称", userInfoPO.getNickName());
-        json.put("性别", "1".equals(userInfoPO.getSex()) ? "男" : "女");
-        json.put("出生日期", userInfoPO.getBirthday());
-        json.put("年龄", userInfoPO.getAge());
-        json.put("星座", userInfoPO.getZodiac());
-        json.put("MBTI人格类型", userInfoPO.getPersonalityType());
-        json.put("居住地址", userInfoPO.getCountry() + " " + userInfoPO.getProvince() + " " + userInfoPO.getCity());
-        json.put("兴趣爱好", userInfoPO.getHobbies());
-        json.put("个人病史", userInfoPO.getMedicalHistory());
-        json.put("个人简介", userPO.getIntroduce());
-        String content = "记住用户的个人信息：" + json;
-        try {
-            //校验nodeId是否存在
-            if (userPO.getMemoryInfoId() != null && !userPO.getMemoryInfoId().isEmpty()) {
-                mainAgent.removeMemoryNode(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), userPO.getMemoryInfoId());
-            }
+        // 使用更紧凑的字符串格式代替JSON，减少格式开销
+        StringBuilder content = new StringBuilder("用户信息:");
+        appendIfNotNull(content, "昵称", userInfoPO.getNickName());
+        appendIfNotNull(content, "性别", "1".equals(userInfoPO.getSex()) ? "男" : "女");
+        appendIfNotNull(content, "生日", userInfoPO.getBirthday());
+        appendIfNotNull(content, "年龄", userInfoPO.getAge());
+        appendIfNotNull(content, "星座", userInfoPO.getZodiac());
+        appendIfNotNull(content, "MBTI", userInfoPO.getPersonalityType());
 
+        // 地址拼接优化
+        String address = buildAddress(userInfoPO);
+        if (address != null && !address.trim().isEmpty()) {
+            content.append(";地址:").append(address);
+        }
+
+        appendIfNotNull(content, "爱好", userInfoPO.getHobbies());
+        appendIfNotNull(content, "病史", userInfoPO.getMedicalHistory());
+
+        try {
             //写入新nodeId
-            String newNodeId = mainAgent.createMemoryNode(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), content);
+            String oldNodeId = userPO.getMemoryInfoId();
+            String newNodeId = mainAgent.createMemoryNode(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), content.toString());
             userPO.setMemoryInfoId(newNodeId);
 
-            //回写数据库
-            userMapper.update(userPO);
-
+            //校验nodeId是否存在
+            if (oldNodeId != null && !oldNodeId.isEmpty()) {
+                mainAgent.removeMemoryNode(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), oldNodeId);
+            }
         } catch (Exception e) {
             log.error(e.getMessage());
             return R.Failed(e.getMessage());
+        } finally {
+            //回写数据库
+            userMapper.update(userPO);
         }
 
         return R.Success("已同步个人预设到大模型");
+    }
+
+    // 工具方法：仅在值不为空时添加
+    private void appendIfNotNull(StringBuilder sb, String key, Object value) {
+        if (value != null && !value.toString().isEmpty()) {
+            sb.append(";").append(key).append(":").append(value);
+        }
+    }
+
+    // 地址构建：避免空字符串拼接
+    private String buildAddress(UserInfoPO userInfoPO) {
+        StringBuilder address = new StringBuilder();
+        if (userInfoPO.getCountry() != null && !userInfoPO.getCountry().isEmpty()) {
+            address.append(userInfoPO.getCountry());
+        }
+        if (userInfoPO.getProvince() != null && !userInfoPO.getProvince().isEmpty()) {
+            if (address.length() > 0) address.append(" ");
+            address.append(userInfoPO.getProvince());
+        }
+        if (userInfoPO.getCity() != null && !userInfoPO.getCity().isEmpty()) {
+            if (address.length() > 0) address.append(" ");
+            address.append(userInfoPO.getCity());
+        }
+        return address.toString();
     }
 
     private record Params(String api, String memoryId, String sessionId) {
