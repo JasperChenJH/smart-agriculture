@@ -29,7 +29,7 @@ public class SecurityConfig {
             "/auth/resetPassword",
             "/dia/streamQuestion",
             "/main/ask",
-           "/auth/wechat/login"
+            "/auth/wechat/login"
     };
 
     @Autowired

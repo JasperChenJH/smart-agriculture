@@ -1,11 +1,8 @@
 package com.soultalk.controller;
 
-import com.soultalk.controller.request.JwtResponse;
 import com.soultalk.controller.request.R;
-import com.soultalk.po.UserPO;
 import com.soultalk.po.WeChatLoginPO;
 import com.soultalk.service.AuthService;
-import com.soultalk.utils.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +33,8 @@ public class AuthController {
     }
 
     /**
-     *  微信登录
+     * 微信登录
+     *
      * @param code 微信登录返回的code
      * @return
      */

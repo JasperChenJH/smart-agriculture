@@ -13,9 +13,9 @@ import java.util.concurrent.ExecutionException;
 public interface MainAgent {
     Flowable<ApplicationResult> streamAppCall(String appKey, String memoryId, String sessionId, String question) throws NoApiKeyException, InputRequiredException;
 
-    Map<String, String> appCall(String appKey, String memoryId, String sessionId, String question) throws NoApiKeyException, InputRequiredException;
-
     Flowable<ApplicationResult> streamAppCall(String appKey, String memoryId, List<Map<String, String>> conntentList, String question) throws NoApiKeyException, InputRequiredException;
+
+    Map<String, String> appCall(String appKey, String memoryId, String sessionId, String question) throws NoApiKeyException, InputRequiredException;
 
     Map<String, String> appCall(String appKey, String memoryId, List<Map<String, String>> conntentList, String question) throws NoApiKeyException, InputRequiredException;
 

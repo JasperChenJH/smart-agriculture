@@ -1,7 +1,6 @@
 package com.soultalk.po;
 
 import lombok.Data;
-import org.springframework.stereotype.Component;
 
 /**
  * @author Chenjh

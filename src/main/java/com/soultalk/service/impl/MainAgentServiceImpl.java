@@ -426,28 +426,40 @@ public class MainAgentServiceImpl implements MainAgentService {
             return R.Failed("未找到该ID");
         }
 
-        // 使用更紧凑的字符串格式代替JSON，减少格式开销
-        StringBuilder content = new StringBuilder("用户信息:");
-        appendIfNotNull(content, "昵称", userInfoPO.getNickName());
-        appendIfNotNull(content, "性别", "1".equals(userInfoPO.getSex()) ? "男" : "女");
-        appendIfNotNull(content, "生日", userInfoPO.getBirthday());
-        appendIfNotNull(content, "年龄", userInfoPO.getAge());
-        appendIfNotNull(content, "星座", userInfoPO.getZodiac());
-        appendIfNotNull(content, "MBTI", userInfoPO.getPersonalityType());
-
-        // 地址拼接优化
-        String address = buildAddress(userInfoPO);
-        if (address != null && !address.trim().isEmpty()) {
-            content.append(";地址:").append(address);
-        }
-
-        appendIfNotNull(content, "爱好", userInfoPO.getHobbies());
-        appendIfNotNull(content, "病史", userInfoPO.getMedicalHistory());
-
+        String content = "记住用户的个人信息：" +
+                "昵称：" +
+                userInfoPO.getNickName() +
+                ";" +
+                "性别：" +
+                ("1".equals(userInfoPO.getSex()) ? "男" : "女") +
+                ";" +
+                "生日：" +
+                userInfoPO.getBirthday() +
+                ";" +
+                "年龄：" +
+                userInfoPO.getAge() +
+                ";" +
+                "星座：" +
+                userInfoPO.getZodiac() +
+                ";" +
+                "MBTI人格类型：" +
+                userInfoPO.getPersonalityType() +
+                ";" +
+                "居住地址：" +
+                (userInfoPO.getCountry() == null ? "" : userInfoPO.getCountry()) +
+                (userInfoPO.getProvince() == null ? "" : userInfoPO.getProvince()) +
+                (userInfoPO.getCity() == null ? "" : userInfoPO.getCity()) +
+                ";" +
+                "兴趣爱好：" +
+                userInfoPO.getHobbies() +
+                ";" +
+                "病史：" +
+                userInfoPO.getMedicalHistory() +
+                ";";
         try {
             //写入新nodeId
             String oldNodeId = userPO.getMemoryInfoId();
-            String newNodeId = mainAgent.createMemoryNode(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), content.toString());
+            String newNodeId = mainAgent.createMemoryNode(Configs.ALI_WORKSPACE_ID, userPO.getMemoryId(), content);
             userPO.setMemoryInfoId(newNodeId);
 
             //校验nodeId是否存在
@@ -463,30 +475,6 @@ public class MainAgentServiceImpl implements MainAgentService {
         }
 
         return R.Success("已同步个人预设到大模型");
-    }
-
-    // 工具方法：仅在值不为空时添加
-    private void appendIfNotNull(StringBuilder sb, String key, Object value) {
-        if (value != null && !value.toString().isEmpty()) {
-            sb.append(";").append(key).append(":").append(value);
-        }
-    }
-
-    // 地址构建：避免空字符串拼接
-    private String buildAddress(UserInfoPO userInfoPO) {
-        StringBuilder address = new StringBuilder();
-        if (userInfoPO.getCountry() != null && !userInfoPO.getCountry().isEmpty()) {
-            address.append(userInfoPO.getCountry());
-        }
-        if (userInfoPO.getProvince() != null && !userInfoPO.getProvince().isEmpty()) {
-            if (address.length() > 0) address.append(" ");
-            address.append(userInfoPO.getProvince());
-        }
-        if (userInfoPO.getCity() != null && !userInfoPO.getCity().isEmpty()) {
-            if (address.length() > 0) address.append(" ");
-            address.append(userInfoPO.getCity());
-        }
-        return address.toString();
     }
 
     private record Params(String api, String memoryId, String sessionId) {

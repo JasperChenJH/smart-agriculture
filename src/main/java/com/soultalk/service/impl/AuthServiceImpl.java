@@ -8,7 +8,6 @@ import com.soultalk.controller.request.JwtResponse;
 import com.soultalk.mapper.UserEmotionRecordMapper;
 import com.soultalk.mapper.UserInfoMapper;
 import com.soultalk.mapper.UserMapper;
-import com.soultalk.po.UserEmotionRecordPO;
 import com.soultalk.po.UserInfoPO;
 import com.soultalk.po.UserPO;
 import com.soultalk.po.WeChatLoginPO;
@@ -24,13 +23,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 
 @Slf4j
 @Service
 public class AuthServiceImpl implements AuthService {
+    //  微信登录
+    public static final String WX_LOGIN = "https://api.weixin.qq.com/sns/jscode2session";
     @Autowired
     private MainAgent mainAgent;
     @Autowired
@@ -41,8 +40,6 @@ public class AuthServiceImpl implements AuthService {
     private UserInfoMapper userInfoMapper;
     @Autowired
     private UserEmotionRecordMapper userEmotionRecordMapper;
-    //  微信登录
-    public static final String WX_LOGIN = "https://api.weixin.qq.com/sns/jscode2session";
 
     @Override
     public ResponseEntity<?> login(String name, String password) {
@@ -130,16 +127,17 @@ public class AuthServiceImpl implements AuthService {
 
         userMapper.update(user);
     }
+
     @Transactional
     @Override
     public WeChatLoginPO wechatLogin(String code) {
         // 获得当前用户的openId 通过 HttpClient向微信发送请求
         HashMap<String, String> map = new HashMap<>();
-        map.put("appid",WeChatProperties.APP_ID);
-        map.put("secret",WeChatProperties.SECRET);
-        map.put("js_code",code);
+        map.put("appid", WeChatProperties.APP_ID);
+        map.put("secret", WeChatProperties.SECRET);
+        map.put("js_code", code);
         //"authorization_code"固定值
-        map.put("grant_type","authorization_code");
+        map.put("grant_type", "authorization_code");
         // 返回值是json格式数据
         /*
             {
@@ -155,7 +153,7 @@ public class AuthServiceImpl implements AuthService {
         String openid = jsonObject.getString("openid");
         String sessionKey = jsonObject.getString("session_key");
         // 判断当前openid 是否为空如果为空,抛出异常
-        if(openid == null){
+        if (openid == null) {
             throw new RuntimeException("微信登录异常未取到openid");
         }
         WeChatLoginPO weChatLoginPO = new WeChatLoginPO();
@@ -163,7 +161,7 @@ public class AuthServiceImpl implements AuthService {
         weChatLoginPO.setSessionKey(sessionKey);
         //判断是否为新用户
         UserPO user = userMapper.getByOpenId(openid);
-        if (user==null){
+        if (user == null) {
             UserPO newUser = new UserPO();
             newUser.setOpenId(openid);
             newUser.setTime(System.currentTimeMillis());

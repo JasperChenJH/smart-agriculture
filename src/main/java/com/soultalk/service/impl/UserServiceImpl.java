@@ -78,10 +78,13 @@ public class UserServiceImpl implements UserService {
     public void updateDetailInfo(UserInfoPO userInfo) {
         Long userId = Long.valueOf(BaseContext.getCurrentId());
         userInfo.setUserId(userId);
+
+        //清除session
+        userMapper.setSessionIdToId(userId, null);
+
         // 先跟新信息再上传
         userInfoMapper.updateDetailInfo(userInfo);
         mainAgentService.uploadInfoToMemory(userId);
-
     }
 
     @Override

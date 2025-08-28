@@ -2,8 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.soultalk.mapper.UserMapper">
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        insert into soultalk.user(name, password, time,open_id)
-        values (#{name}, #{password}, #{time},#{openId})
+        insert into soultalk.user(name, password, time, open_id)
+        values (#{name}, #{password}, #{time}, #{openId})
     </insert>
     <update id="update">
         update soultalk.user
@@ -40,6 +40,11 @@
     <update id="setMemoryInfoIdToId">
         update soultalk.user
         set memory_info_id = #{memoryInfoId}
+        where id = #{id}
+    </update>
+    <update id="setSessionIdToId">
+        update soultalk.user
+        set session_id = #{sessionId}
         where id = #{id}
     </update>
     <delete id="deleteById">

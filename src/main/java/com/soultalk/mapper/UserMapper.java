@@ -17,6 +17,8 @@ public interface UserMapper {
 
     void setMemoryInfoIdToId(Long id, String memoryInfoId);
 
+    void setSessionIdToId(Long id, String sessionId);
+
     void insert(UserPO user);
 
     void update(UserPO user);

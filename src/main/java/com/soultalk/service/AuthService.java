@@ -1,6 +1,5 @@
 package com.soultalk.service;
 
-import com.soultalk.po.UserPO;
 import com.soultalk.po.WeChatLoginPO;
 import org.springframework.http.ResponseEntity;
 
