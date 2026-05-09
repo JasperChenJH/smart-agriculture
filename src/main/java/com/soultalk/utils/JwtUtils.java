@@ -32,6 +32,16 @@ public class JwtUtils {
         return Long.parseLong(s);
     }
 
+    // 生成管理员JWT
+    public static String generateAdminToken(Integer adminId) {
+        return JWT.create()
+                .withSubject(String.valueOf(adminId))
+                .withClaim("type", "admin")
+                .withIssuedAt(new Date())
+                .withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7))
+                .sign(Algorithm.HMAC512(JWT_SECRET_KEY));
+    }
+
     // 验证JWT是否有效（未过期）
     public static boolean isTokenExpired(String token) {
         return verifyToken(token).getExpiresAt().before(new Date());

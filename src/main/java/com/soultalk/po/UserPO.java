@@ -19,4 +19,5 @@ public class UserPO {
     private String memoryInfoId;
     private String sessionId;
     private String openId;
+    private Integer isUse;
 }

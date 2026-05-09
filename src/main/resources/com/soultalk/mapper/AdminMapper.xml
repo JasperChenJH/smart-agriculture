@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.soultalk.mapper.AdminMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="adminId">
+        insert into admin(nickname, password)
+        values (#{nickname}, #{password})
+    </insert>
+    <update id="update">
+        update admin
+        <set>
+            <if test="nickname != null">
+                nickname = #{nickname},
+            </if>
+            <if test="password != null">
+                password = #{password},
+            </if>
+        </set>
+        where admin_id = #{adminId}
+    </update>
+    <delete id="deleteById">
+        delete from admin where admin_id = #{adminId}
+    </delete>
+    <select id="selectById" resultType="com.soultalk.po.AdminPO">
+        select admin_id as adminId, nickname, password from admin where admin_id = #{adminId}
+    </select>
+    <select id="selectByNickname" resultType="com.soultalk.po.AdminPO">
+        select admin_id as adminId, nickname, password from admin where nickname = #{nickname}
+    </select>
+</mapper>

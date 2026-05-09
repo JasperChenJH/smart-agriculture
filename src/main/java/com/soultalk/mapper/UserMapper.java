@@ -3,6 +3,8 @@ package com.soultalk.mapper;
 import com.soultalk.po.UserPO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 @Mapper
 public interface UserMapper {
     UserPO selectByName(String name);
@@ -26,4 +28,6 @@ public interface UserMapper {
     void deleteById(Long id);
 
     UserPO getByOpenId(String openid);
+
+    List<UserPO> selectAll();
 }

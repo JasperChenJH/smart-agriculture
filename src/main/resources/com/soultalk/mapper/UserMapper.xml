@@ -78,4 +78,8 @@
         where open_id = #{openId}
     </select>
 
+    <select id="selectAll" resultType="com.soultalk.po.UserPO">
+        select id, name, is_use as isUse from soultalk.user
+    </select>
+
 </mapper>

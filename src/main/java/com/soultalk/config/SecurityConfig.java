@@ -29,7 +29,9 @@ public class SecurityConfig {
             "/auth/resetPassword",
             "/dia/streamQuestion",
             "/main/ask",
-            "/auth/wechat/login"
+            "/auth/wechat/login",
+            "/admin/login",
+            "/admin/register"
     };
 
     @Autowired
