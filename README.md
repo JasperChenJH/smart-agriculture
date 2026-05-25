@@ -1,4 +1,4 @@
-# Smart Agriculture
+<img width="480" height="1028" alt="5bdee82c77336533fcc3a76abd5fd1ec" src="https://github.com/user-attachments/assets/49a56639-d03f-4688-882b-1b0b38395f69" /># Smart Agriculture
 
 > 面向智慧农业场景的智能问答 Agent 系统后端，支持农业知识问答、种植档案管理、多轮对话、长期记忆、RAG 检索增强、流式输出和用户管理等能力。
 
@@ -7,7 +7,8 @@
 本项目目前主要提供后端能力，适合作为智慧农业 AI Agent、大模型应用开发、RAG 检索增强问答、Spring Boot 后端工程化和农业智能服务系统的实践项目。
 
 ---
-
+## 展示图
+![系统架构图](./5bdee82c77336533fcc3a76abd5fd1ec)
 ## 目录
 
 * [项目简介](#项目简介)
