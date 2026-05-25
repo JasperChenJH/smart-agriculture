@@ -1,4 +1,4 @@
-<img width="480" height="1028" alt="5bdee82c77336533fcc3a76abd5fd1ec" src="https://github.com/user-attachments/assets/49a56639-d03f-4688-882b-1b0b38395f69" /># Smart Agriculture
+# Smart Agriculture
 
 > 面向智慧农业场景的智能问答 Agent 系统后端，支持农业知识问答、种植档案管理、多轮对话、长期记忆、RAG 检索增强、流式输出和用户管理等能力。
 
@@ -40,7 +40,23 @@
 * 用户通过连续对话方式完成农业问题咨询和农事记录管理。
 
 ---
+---
 
+## 系统展示
+
+<p align="center">
+  <img src="./05434c4b2f121f0dd790813d6779e909.png" width="750" alt="系统展示图1">
+</p>
+
+<p align="center">
+  <img src="./5bdee82c77336533fcc3a76abd5fd1ec.png" width="750" alt="系统展示图2">
+</p>
+
+<p align="center">
+  <img src="./d444cdc7d347ec0571507decd915691f.png" width="750" alt="系统展示图3">
+</p>
+
+---
 ## 项目亮点
 
 * **农业场景定制**：围绕作物种植、病虫害防治、施肥灌溉和种植档案等农业生产问题设计。
