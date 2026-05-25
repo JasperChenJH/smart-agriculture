@@ -44,15 +44,15 @@
 ## 系统展示
 
 <p align="center">
-  <img src="./05434c4b2f121f0dd790813d6779e909.png" width="750" alt="系统展示图1">
+  <img src="./05434c4b2f121f0dd790813d6779e909.png" width="450" alt="系统展示图1">
 </p>
 
 <p align="center">
-  <img src="./5bdee82c77336533fcc3a76abd5fd1ec.png" width="750" alt="系统展示图2">
+  <img src="./5bdee82c77336533fcc3a76abd5fd1ec.png" width="450" alt="系统展示图2">
 </p>
 
 <p align="center">
-  <img src="./d444cdc7d347ec0571507decd915691f.png" width="750" alt="系统展示图3">
+  <img src="./d444cdc7d347ec0571507decd915691f.png" width="450" alt="系统展示图3">
 </p>
 
 ---
